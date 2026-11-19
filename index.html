@@ -1301,7 +1301,7 @@ function inhaltSchicken(s){
   ${KURZ?'<p class="hinweis">Du bekommst innerhalb von 24 Stunden per WhatsApp eine Skizze, was aus deinem Badezimmer werden kann (Montag bis Freitag). Kostenlos.</p>':''}
   ${offen.length?`<p class="hinweis">Noch offen ist nicht schlimm${KURZ?'.':', das klären wir im Gespräch.'}</p><div class="chips">${offen.map(([t])=>`<span class="chip offen">${esc(t)}</span>`).join('')}</div>`:''}
   ${k?'':`<label class="feld">Dein Name<input id="f-name" autocomplete="given-name" value="${esc(S.vorname)}"></label>`}
-  <label class="feld">Was soll ich noch wissen? (freiwillig)<textarea id="f-notiz" placeholder="z. B. Wand B ist schief">${esc(S.notiz)}</textarea></label>
+  <label class="feld">Was soll ich noch wissen?<textarea id="f-notiz" placeholder="z. B. Wand B ist schief">${esc(S.notiz)}</textarea></label>
   <div class="schicken"><b>1</b><div><strong>Nachricht an Thommy</strong><span>Die Nachricht ist schon fertig. Du tippst nur auf Senden.</span><button class="knopf${gesendet?' zwei':''}" type="button" data-whatsapp>${gesendet?'✓ Noch mal öffnen':'WhatsApp öffnen'}</button></div></div>
   <div class="schicken"><b>2</b><div><strong>Bild${n?` und ${n} ${n===1?'Foto':'Fotos'}`:''} hinterher</strong><span>${teilen?'Tippe auf den Knopf, wähle WhatsApp und dann Thommy.':'Speichert die Dateien. Zieh sie danach in den Chat.'}</span><button class="knopf${gesendet?'':' zwei'}" type="button" data-bild>${teilen?'Teilen':'Speichern'}</button></div></div>
   <p class="hinweis">Der Link in der Nachricht öffnet deinen Grundriss jederzeit wieder.</p>`;
