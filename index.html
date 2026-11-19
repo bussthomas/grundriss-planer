@@ -6,7 +6,7 @@
 <title>Grundriss-Planer</title>
 <meta name="robots" content="noindex">
 <meta name="description" content="Zeichne dein Badezimmer Schritt für Schritt und schick mir den Grundriss.">
-<meta name="theme-color" content="#7C2323">
+<meta name="theme-color" content="#FFFFFF">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -137,6 +137,43 @@ h2{font-size:17px;font-weight:600;margin:0 0 2px}
   #wand-seite{display:flex}
   #b-ansicht,#wand-karte{display:none!important}
 }
+
+/* Ruhige Oberfläche (Thommy, 19.11.2026): Weiß, feine Linien, Rot nur für die eine Hauptaktion und die Auswahl. */
+:root{--rand:#D9C2B3;--trenn:#F0E7E1}
+body,#panel,#inhalt{background:#fff}
+header{background:#fff;color:var(--ink);border-bottom:1px solid var(--trenn);padding-block:6px}
+header h1{font-size:15px;color:var(--primary)}
+header button{border-color:var(--rand);color:var(--muted);min-height:34px;font-size:13px}
+#plan-box,#wand-seite{background:var(--canvas-l)}
+#wand-seite{border-left:1px solid var(--trenn)}
+#panel{border-top:1px solid var(--trenn)}
+#fortschritt{flex:none;height:3px;background:var(--trenn)}
+#fortschritt i{display:block;height:100%;background:var(--primary);transition:width .25s}
+nav{display:flex;justify-content:space-between;gap:4px;border-bottom:1px solid var(--trenn);padding:0 14px}
+nav button{flex:none;padding:0 2px;flex-direction:row;justify-content:center;font-size:12px;min-height:40px;color:var(--faint);border-bottom:2px solid transparent}
+nav i{display:none}
+nav .fertig{color:var(--muted)}
+nav .jetzt{color:var(--primary);border-bottom-color:var(--primary)}
+#inhalt{padding:16px 16px 12px}
+.ueber{text-transform:none;letter-spacing:0;font-weight:500;font-size:13px;color:var(--faint);margin-bottom:4px}
+h2{font-size:19px;line-height:1.25;margin-bottom:10px}
+h2+.hinweis{margin-top:-4px}
+.hinweis{margin-bottom:14px}
+#fuss{border-top:1px solid var(--trenn)}
+#fuss .knopf.zwei{flex:1}
+.stepper,.wahl button,.palette button,.thumbs button,.wand-kopf button,.foto-gross{border-color:var(--rand)}
+.stepper input{background:#fff;border-inline-color:var(--trenn)}
+.stepper button{color:var(--ink)}
+.feld input,.feld textarea{background:#fff;border-color:var(--rand)}
+.feld input:focus,.feld textarea:focus,.stepper input:focus{outline:2px solid var(--primary);outline-offset:-2px}
+.wahl{gap:8px}
+.wahl button[aria-pressed=true]{background:var(--accent-l);border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);color:var(--primary-d)}
+.palette button:hover{background:var(--canvas-l)}
+.knopf.zwei{border-color:var(--rand);color:var(--ink)}
+.schicken{border-color:var(--trenn)}
+.schicken>b{background:var(--trenn);color:var(--ink)}
+.block{margin-bottom:12px}
+#b-ansicht{border-color:var(--rand);color:var(--ink)}
 </style>
 </head>
 <body>
@@ -166,6 +203,7 @@ h2{font-size:17px;font-weight:600;margin:0 0 2px}
     <div id="meldung" role="status"></div>
   </div>
   <section id="panel">
+    <div id="fortschritt" aria-hidden="true"><i></i></div>
     <nav id="phasen" aria-label="Du bist hier"></nav>
     <div id="inhalt"></div>
     <div id="fuss"></div>
@@ -899,7 +937,7 @@ new ResizeObserver(()=>{ if(!drag){ ansicht=null; maleplan(); } }).observe(wrap(
 /* ---------- Geführter Ablauf: eine Frage pro Bildschirm ---------- */
 const HEIZARTEN = [['hk','Heizkörper'],['fbhWasser','Fußbodenheizung mit Wasser'],['fbhElektro','Elektrische Fußbodenheizung'],['keine','Keine Heizung'],['unklar','Weiß ich nicht']];
 const PHASEN = ['Raum','Objekte','Leitungen','Strom','Fotos','Schicken'];
-const WEISS_NICHT = KURZ ? 'Weißt du es nicht? Überspring es einfach.' : 'Weißt du es nicht? Überspring es einfach, das klären wir im Gespräch.';
+const WEISS_NICHT = 'Weißt du es nicht? Überspringen.';
 const KURZ_IDS = ['masse','form','tuer','fenster','schraege','wand','vorwand','wc','waschtisch','dusche','wanne','fallrohr','schacht'];
 const LEAD_WANN = [['bald','In den nächsten 3 Monaten'],['jahr','In 3 bis 12 Monaten'],['spaeter','Später oder weiß noch nicht']];
 /* Kurzfassung: 3 Fragen zum Bedarf, damit die kostenlose Skizze passt (Corey: erst den Raum und die Bedürfnisse prüfen, dann zeichnen). */
@@ -913,24 +951,24 @@ const FRAGEN = [
   {id:'masse', ph:0, art:'masse', griffe:true},
   {id:'form', ph:0, art:'form', griffe:true},
   {id:'tuer', ph:0, typen:['tuer'], immer:true, frage:'Wo ist die Tür?', hilfe:'Zieh sie auf die richtige Wand. Der gestrichelte Bogen zeigt, wie sie aufgeht.'},
-  {id:'fenster', ph:0, typen:['fenster'], mehrfach:true, frage:'Gibt es ein Fenster?', hilfe:'Zieh es auf die richtige Wand.'},
-  {id:'schraege', ph:0, typen:['schraege'], frage:'Gibt es eine Dachschräge?', hilfe:'Zieh sie an die Wand, an der die Schräge ist.'},
+  {id:'fenster', ph:0, typen:['fenster'], mehrfach:true, frage:'Gibt es ein Fenster?', hilfe:''},
+  {id:'schraege', ph:0, typen:['schraege'], frage:'Gibt es eine Dachschräge?', hilfe:''},
   {id:'dachfenster', ph:0, typen:['dachfenster'], mehrfach:true, frage:'Gibt es ein Dachfenster?', hilfe:'Zieh es dorthin, wo es von oben gesehen sitzt.'},
-  {id:'wand', ph:0, typen:['wand'], mehrfach:true, frage:'Gibt es eine Zwischen- oder Trennwand?', hilfe:'Zum Beispiel neben der Toilette oder eine Glaswand an der Dusche. Die blauen Griffe ändern die Länge.'},
+  {id:'wand', ph:0, typen:['wand'], mehrfach:true, frage:'Gibt es eine Zwischen- oder Trennwand?', hilfe:'Zum Beispiel neben der Toilette oder Glas an der Dusche.'},
   {id:'vorwand', ph:0, typen:['vorwand'], mehrfach:true, frage:'Gibt es eine Vorwand?', hilfe:'Eine vorgesetzte Wand, oft hinter Toilette oder Waschbecken. Darin laufen meist die Rohre.'},
-  {id:'nische', ph:0, typen:['nische'], mehrfach:true, frage:'Gibt es eine Nische?', hilfe:'Zum Beispiel für Duschgel in der Dusche. Zieh sie auf die richtige Wand.'},
+  {id:'nische', ph:0, typen:['nische'], mehrfach:true, frage:'Gibt es eine Nische?', hilfe:'Zum Beispiel für Duschgel in der Dusche.'},
   {id:'gebaeude', ph:0, art:'gebaeude'},
-  {id:'wc', ph:1, typen:['wc'], immer:true, frage:'Wo steht die Toilette?', hilfe:'Zieh sie an die richtige Stelle.'},
-  {id:'waschtisch', ph:1, typen:['waschtisch'], immer:true, mehrfach:true, frage:'Wo ist das Waschbecken?', hilfe:'Zieh es an die richtige Stelle.'},
-  {id:'dusche', ph:1, typen:['dusche'], frage:'Gibt es eine Dusche?', hilfe:'Zieh sie an die richtige Stelle.'},
-  {id:'wanne', ph:1, typen:['wanne'], frage:'Gibt es eine Badewanne?', hilfe:'Zieh sie an die richtige Stelle. „Drehen“ dreht sie um 90 Grad.'},
+  {id:'wc', ph:1, typen:['wc'], immer:true, frage:'Wo steht die Toilette?', hilfe:''},
+  {id:'waschtisch', ph:1, typen:['waschtisch'], immer:true, mehrfach:true, frage:'Wo ist das Waschbecken?', hilfe:''},
+  {id:'dusche', ph:1, typen:['dusche'], frage:'Gibt es eine Dusche?', hilfe:''},
+  {id:'wanne', ph:1, typen:['wanne'], frage:'Gibt es eine Badewanne?', hilfe:''},
   {id:'heizung', ph:1, typen:['heizung'], mehrfach:true, frage:'Wie wird dein Badezimmer beheizt?', hilfe:'Mehreres geht auch.'},
-  {id:'therme', ph:1, typen:['therme'], mehrfach:true, frage:'Hängt im Bad eine Therme oder ein Boiler?', hilfe:'Zieh das Gerät an die richtige Wand.'},
-  {id:'waschmaschine', ph:1, typen:['waschmaschine'], frage:'Steht hier eine Waschmaschine?', hilfe:'Zieh sie an die richtige Stelle.'},
-  {id:'schrank', ph:1, typen:['schrank'], mehrfach:true, frage:'Gibt es einen Schrank?', hilfe:'Zieh ihn an die richtige Stelle.'},
+  {id:'therme', ph:1, typen:['therme'], mehrfach:true, frage:'Hängt im Bad eine Therme oder ein Boiler?', hilfe:''},
+  {id:'waschmaschine', ph:1, typen:['waschmaschine'], frage:'Steht hier eine Waschmaschine?', hilfe:''},
+  {id:'schrank', ph:1, typen:['schrank'], mehrfach:true, frage:'Gibt es einen Schrank?', hilfe:''},
   {id:'sonstiges', ph:1, typen:['sonstiges'], mehrfach:true, frage:'Steht sonst noch etwas im Raum?', hilfe:'Zum Beispiel ein Bidet oder ein Regal.'},
   {id:'fallrohr', ph:2, typen:['fallrohr'], frage:'Wo läuft das dicke Abwasserrohr?', hilfe:'Das Fallrohr sitzt oft hinter der Toilette oder in einem Kasten. '+WEISS_NICHT},
-  {id:'strang', ph:2, typen:['strang'], mehrfach:true, frage:'Wo läuft die Abwasserleitung?', hilfe:'Zieh sie vom Abfluss bis zum dicken Rohr. Die blauen Griffe ändern die Länge. Macht sie eine Ecke, nimm ein zweites Stück. '+WEISS_NICHT},
+  {id:'strang', ph:2, typen:['strang'], mehrfach:true, frage:'Wo läuft die Abwasserleitung?', hilfe:'Zieh sie vom Abfluss bis zum dicken Rohr. Bei einer Ecke nimm ein zweites Stück. '+WEISS_NICHT},
   {id:'raus', ph:2, art:'raus'},
   {id:'schacht', ph:2, typen:['schacht'], mehrfach:true, frage:'Gibt es einen Schacht oder Kasten?', hilfe:'Alles, was aus der Wand ragt und nicht wegkann. '+WEISS_NICHT},
   {id:'abfluss', ph:2, typen:['abfluss'], mehrfach:true, frage:'Wo sind Abflüsse?', hilfe:'Im Boden oder in der Wand. '+WEISS_NICHT},
@@ -939,8 +977,8 @@ const FRAGEN = [
   {id:'revision', ph:2, typen:['revision'], mehrfach:true, frage:'Gibt es eine Revisionsklappe?', hilfe:'Eine kleine Klappe in Wand oder Fliesen, oft an Wanne oder Schacht. '+WEISS_NICHT},
   {id:'schalter', ph:3, typen:['schalter'], immer:true, mehrfach:true, frage:'Wo ist der Lichtschalter?', hilfe:'Sag mir auch, ob er drinnen oder draußen im Flur sitzt.'},
   {id:'steckdose', ph:3, typen:['steckdose'], mehrfach:true, frage:'Wo sind Steckdosen?', hilfe:'Jede Stelle einmal einzeichnen.'},
-  {id:'luefter', ph:3, typen:['luefter'], frage:'Gibt es einen Lüfter?', hilfe:'Zieh ihn auf die richtige Wand.'},
-  {id:'lueftung', ph:3, typen:['lueftrohr','lueftschacht'], mehrfach:true, frage:'Wohin geht die Abluft?', hilfe:'Zeichne das Rohr vom Lüfter bis nach draußen oder den Lüftungsschacht ein. Die blauen Griffe ändern die Länge. '+WEISS_NICHT},
+  {id:'luefter', ph:3, typen:['luefter'], frage:'Gibt es einen Lüfter?', hilfe:''},
+  {id:'lueftung', ph:3, typen:['lueftrohr','lueftschacht'], mehrfach:true, frage:'Wohin geht die Abluft?', hilfe:'Zeichne das Rohr vom Lüfter nach draußen oder den Lüftungsschacht ein. '+WEISS_NICHT},
 ];
 function akt(){ const l=schritte(); schritt=clamp(schritt,0,l.length-1); return l[schritt]; }
 function schritte(){
@@ -1011,6 +1049,7 @@ function zeigeInhalt(){
   document.querySelector('main').classList.toggle('ohne-plan',s.art==='lead'||s.art==='bedarf');
   const phDa=new Set(schritte().map(x=>x.ph));
   wrap('phasen').innerHTML=PHASEN.map((p,i)=>[p,i]).filter(([,i])=>phDa.has(i)).map(([p,i],nr)=>`<button type="button" data-phase="${i}" class="${i<s.ph?'fertig':i===s.ph?'jetzt':''}"${i===s.ph?' aria-current="step"':''}><i>${nr+1}</i>${p}</button>`).join('');
+  { const n=schritte(); document.querySelector('#fortschritt i').style.width=Math.round(100*(schritt+1)/n.length)+'%'; }
   wrap('inhalt').innerHTML=inhaltSchritt(s);
   const l=schritte(), leerOhne=s.typen&&!S.items.some(x=>s.typen.includes(x.t))&&!(s.id==='heizung'&&S.heizung.length);
   const nebenbei=sel&&s.typen&&!s.typen.includes((S.items.find(x=>x.id===sel)||{}).t);
@@ -1020,7 +1059,7 @@ function zeigeInhalt(){
   wrap('fuss').innerHTML=(nebenbei||nebenFoto)
     ? `<button class="knopf" type="button" data-fertig>Fertig</button>`
     : `<button class="knopf zwei" type="button" data-schritt="-1"${zurueckAus?' disabled':''}>Zurück</button>`+
-      (ende?'':`<button class="knopf" type="button" data-schritt="1" data-leer="${leerOhne?1:0}">${leerOhne||offenFoto||(s.art==='lead'&&leadStand()!=='ok')?'Überspringen':'Weiter'}</button>`);
+      (ende?'':(skip=>`<button class="knopf${skip?' zwei':''}" type="button" data-schritt="1" data-leer="${leerOhne?1:0}">${skip?'Überspringen':'Weiter'}</button>`)(leerOhne||offenFoto||(s.art==='lead'&&leadStand()!=='ok')));
   wrap('b-zurueck').disabled=!verlauf.length;
   wrap('inhalt').querySelectorAll('img[data-foto]').forEach(i=>{ const b=FOTOS.get(i.dataset.foto); if(b){ i.src=URL.createObjectURL(b); i.onload=()=>URL.revokeObjectURL(i.src); } });
 }
@@ -1054,7 +1093,7 @@ function leadStand(){
 }
 function inhaltLead(s){
   const l=S.lead||{}, st=leadStand(), knoepfe=(feld,liste)=>`<div class="wahl">${liste.map(([k,t])=>`<button type="button" data-lead="${feld}:${k}" aria-pressed="${l[feld]===k}">${t}</button>`).join('')}</div>`;
-  return kopf(s,'Fast geschafft','Noch 3 Angaben, dann schickst du mir deinen Grundriss.')+
+  return kopf(s,'Fast geschafft','')+
     `<label class="feld">Deine Postleitzahl<input id="f-plz" inputmode="numeric" maxlength="5" autocomplete="postal-code" value="${esc(l.plz||'')}"></label>`+
     `<div class="block"><p>Gehört dir die Wohnung oder das Haus?</p>${knoepfe('eigen',[['ja','Ja'],['nein','Nein, ich miete']])}</div>`+
     `<div class="block"><p>Wann soll dein Badezimmer neu werden?</p>${knoepfe('wann',LEAD_WANN)}</div>`+
@@ -1223,7 +1262,7 @@ function felder(it){
   if(it.t==='wand'){
     h+=wahl('Was für eine Wand?','wandArt',[['decke','Bis zur Decke'],['halb','Halbhoch'],['glas','Glas']],it.wandArt||'decke');
     if(it.wandArt==='halb') h+=reihe('Wand hoch',stepper('hoehe',it.hoehe));
-    if(it.wandArt!=='glas') h+=`<div class="block"><p>Wie dick ist die Wand?</p>${reihe('Dicke',stepper('d',it.d,1))}<p class="hinweis">Miss an der Stirnseite oder an einer Türöffnung. Weißt du es nicht, lass den Wert stehen.</p></div>`;
+    if(it.wandArt!=='glas') h+=`<div class="block"><p>Wie dick ist die Wand?</p>${reihe('Dicke',stepper('d',it.d,1))}</div>`;
     const li=strahl(k.x0,(k.y0+k.y1)/2,-1,0,W), ob=strahl((k.x0+k.x1)/2,k.y0,0,-1,W);
     return h+klappe(reihe('Länge',stepper('w',it.w))+(it.wandArt==='glas'?reihe('Dicke',stepper('d',it.d,1)):'')+(li?reihe('Abstand links',stepper('abL',li.d,1)):'')+(ob?reihe('Abstand oben',stepper('abO',ob.d,1)):''));
   }
@@ -1240,14 +1279,14 @@ function felder(it){
 }
 function inhaltFoto(s){
   const hat=S.fotos[s.fotoKey]&&FOTOS.has(s.fotoKey);
-  return `<p class="ueber">Fotos · ${s.nr} von ${s.von}</p><h2>Stell dich in die blaue Ecke</h2><p class="hinweis">Das ist ${esc(s.ecke.name)}. Fotografiere von dort quer durch den Raum, so viel wie möglich drauf. Bist du gerade nicht vor Ort? Nimm ein Foto aus deiner Galerie, das ungefähr aus dieser Ecke gemacht ist.</p>`+
+  return `<p class="ueber">Fotos · ${s.nr} von ${s.von}</p><h2>Stell dich in die blaue Ecke</h2><p class="hinweis">Das ist ${esc(s.ecke.name)}. Fotografiere von dort quer durch den Raum. Ein Foto aus deiner Galerie geht auch.</p>`+
     (hat?`<img class="foto-gross" data-foto="${s.fotoKey}" alt="Dein Foto aus dieser Ecke">`:'')+
     `<button class="knopf${hat?' zwei':''}" type="button" data-foto="${s.fotoKey}">${hat?'Anderes Foto nehmen':'Foto machen oder auswählen'}</button>`+
     (hat?`<button class="knopf leise" type="button" data-fotoweg="${s.fotoKey}">Foto entfernen</button>`:'');
 }
 function inhaltFotoExtra(s){
   const ex=S.items.filter(i=>i.t==='fotopunkt');
-  return `<p class="ueber">Fotos · Nah dran</p><h2>Noch ein Foto von nah?</h2><p class="hinweis">Zum Beispiel Ventile, Anschlüsse, Revisionsklappe oder der Kasten. Jedes Detail hilft mir. Fotos aus deiner Galerie gehen auch.</p>`+
+  return `<p class="ueber">Fotos · Nah dran</p><h2>Noch ein Foto von nah?</h2><p class="hinweis">Zum Beispiel Ventile, Anschlüsse oder der Kasten. Auch aus deiner Galerie.</p>`+
     (ex.length?`<div class="thumbs">${ex.map(i=>`<button type="button" data-waehle="${i.id}"><img data-foto="${i.id}" alt=""><span>${esc(i.text||'Detail')}</span></button>`).join('')}</div>`:'')+
     `<button class="knopf" type="button" data-foto="neu">${ex.length?'Noch ein Foto':'Foto machen oder auswählen'}</button>`;
 }
@@ -1263,9 +1302,9 @@ function inhaltSchicken(s){
   ${offen.length?`<p class="hinweis">Noch offen ist nicht schlimm${KURZ?'.':', das klären wir im Gespräch.'}</p><div class="chips">${offen.map(([t])=>`<span class="chip offen">${esc(t)}</span>`).join('')}</div>`:''}
   ${k?'':`<label class="feld">Dein Name<input id="f-name" autocomplete="given-name" value="${esc(S.vorname)}"></label>`}
   <label class="feld">Was soll ich noch wissen? (freiwillig)<textarea id="f-notiz" placeholder="z. B. Wand B ist schief">${esc(S.notiz)}</textarea></label>
-  <div class="schicken"><b>1</b><div><strong>Nachricht an Thommy</strong><span>Der Knopf öffnet WhatsApp. Die Nachricht ist schon fertig geschrieben, du tippst nur auf Senden.</span><button class="knopf${gesendet?' zwei':''}" type="button" data-whatsapp>${gesendet?'✓ Noch mal öffnen':'WhatsApp öffnen'}</button></div></div>
+  <div class="schicken"><b>1</b><div><strong>Nachricht an Thommy</strong><span>Die Nachricht ist schon fertig. Du tippst nur auf Senden.</span><button class="knopf${gesendet?' zwei':''}" type="button" data-whatsapp>${gesendet?'✓ Noch mal öffnen':'WhatsApp öffnen'}</button></div></div>
   <div class="schicken"><b>2</b><div><strong>Bild${n?` und ${n} ${n===1?'Foto':'Fotos'}`:''} hinterher</strong><span>${teilen?'Tippe auf den Knopf, wähle WhatsApp und dann Thommy.':'Speichert die Dateien. Zieh sie danach in den Chat.'}</span><button class="knopf${gesendet?'':' zwei'}" type="button" data-bild>${teilen?'Teilen':'Speichern'}</button></div></div>
-  <p class="hinweis">Dein Grundriss bleibt auch bei dir: In der Nachricht steht ein Link. Damit öffnest du ihn jederzeit wieder, direkt aus unserem Chat.</p>`;
+  <p class="hinweis">Der Link in der Nachricht öffnet deinen Grundriss jederzeit wieder.</p>`;
 }
 function melde(t){ const m=wrap('meldung'); m.textContent=t; m.classList.add('an'); clearTimeout(melde.t); melde.t=setTimeout(()=>m.classList.remove('an'),3500); }
 
