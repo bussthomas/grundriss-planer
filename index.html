@@ -1,0 +1,1545 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Grundriss-Planer</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Zeichne dein Badezimmer Schritt für Schritt und schick mir den Grundriss.">
+<meta name="theme-color" content="#7C2323">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+@font-face{font-family:Poppins;font-weight:400;font-display:swap;src:url(fonts/Poppins-Regular.ttf)}
+@font-face{font-family:Poppins;font-weight:500;font-display:swap;src:url(fonts/Poppins-Medium.ttf)}
+@font-face{font-family:Poppins;font-weight:600;font-display:swap;src:url(fonts/Poppins-SemiBold.ttf)}
+@font-face{font-family:Poppins;font-weight:700;font-display:swap;src:url(fonts/Poppins-Bold.ttf)}
+:root{--ink:#1A1A1A;--muted:#46423E;--faint:#AEA8A4;--line:#E4C288;--canvas:#D9C2B3;--canvas-m:#F0E7E1;--canvas-l:#F7F3F0;--card:#FFFFFF;
+--primary:#7C2323;--primary-d:#661717;--accent:#FCE06E;--accent-l:#FEF0B7;
+--blue:#127CF2;--blue-l:#E7F1FE;--blue-d:#0A4E99;--orange-l:#FEF1E3;--orange-d:#A65A00;--green-l:#E6F6EE;--green-d:#17784A;--radius:6px;
+font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--canvas-l)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{display:grid;grid-template-rows:auto minmax(0,1fr);height:100dvh;overflow:hidden;background:var(--canvas-l);font-size:16px;line-height:1.4}
+button,input,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:8px;padding:8px 16px;padding-top:max(8px,env(safe-area-inset-top));background:var(--primary);color:#fff}
+header h1{font-size:17px;font-weight:600;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:transparent;border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:var(--radius);min-height:36px;padding:0 10px;font-size:14px;cursor:pointer}
+header button:disabled{opacity:.4;cursor:default}
+#b-zurueck{font-size:20px;line-height:1;min-width:40px}
+main{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,52%);min-height:0}
+#plan-box{position:relative;background:#fff;min-height:0;overflow:hidden}
+main.ohne-plan{grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,1fr)}
+main.ohne-plan #plan-box{display:none}
+#plan{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+#plan [data-id],#plan [data-griff]{cursor:grab}
+#panel{display:flex;flex-direction:column;min-height:0;background:var(--canvas-l);border-top:1px solid var(--line)}
+nav{display:grid;grid-template-columns:repeat(6,1fr);background:#fff;border-bottom:1px solid var(--line);flex:none;padding:6px 4px}
+nav button{border:0;background:none;padding:2px 0;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;min-height:44px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+nav i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--canvas-m);color:var(--muted);display:grid;place-items:center;font-size:12px;font-weight:600}
+nav .fertig i{background:var(--accent);color:var(--primary-d)}
+nav .jetzt{color:var(--primary);font-weight:600}
+nav .jetzt i{background:var(--primary);color:#fff}
+#inhalt{flex:1;min-height:0;overflow-y:auto;padding:12px 16px;-webkit-overflow-scrolling:touch}
+#fuss{flex:none;display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line)}
+#fuss .knopf{margin:0;flex:2}
+#fuss .knopf.zwei{flex:1}
+#fuss .knopf:disabled{opacity:.35;cursor:default}
+.ueber{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 2px}
+.sitzt{font-size:14px;font-weight:600;color:var(--blue-d);margin:0 0 4px}
+.knopf.hinzu{display:flex;align-items:center;justify-content:center;gap:10px}
+.knopf.hinzu svg{width:34px;height:34px;background:#fff;border-radius:var(--radius);padding:2px;flex:none}
+.wahl.spalte{flex-direction:column}
+.wahl.spalte button{flex:none;width:100%}
+.hinweis.abstand{margin:10px 0 2px}
+.wahl.halb button{flex:1 1 40%}
+.wahl.abstand-klein{margin-top:8px}
+.wahl.klein{margin-bottom:8px}
+.wahl.klein button{min-height:38px;min-width:64px;flex:0 1 auto}
+.zweier{flex-wrap:wrap}
+.zweier .knopf{flex:1 1 40%;min-height:44px;font-size:15px}
+.foto-gross{display:block;width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius);border:1px solid var(--line);margin-bottom:8px;background:var(--canvas-m)}
+.foto-gross:not([src]){display:none}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:4px}
+.thumbs button{padding:0;border:1px solid var(--line);border-radius:var(--radius);background:#fff;overflow:hidden;font-size:12px;cursor:pointer}
+.thumbs img{display:block;width:100%;height:72px;object-fit:cover}
+.thumbs span{display:block;padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schicken{display:flex;gap:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:8px}
+.schicken>b{flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:14px}
+.schicken>div{flex:1;min-width:0}
+.schicken strong{display:block;font-size:15px;font-weight:600}
+.schicken span{display:block;font-size:13px;color:var(--muted)}
+.schicken .knopf{margin-top:8px}
+@keyframes puls{50%{opacity:.35}}
+.puls{animation:puls 1.3s infinite}
+h2{font-size:17px;font-weight:600;margin:0 0 2px}
+.hinweis{font-size:14px;color:var(--muted);margin:0 0 12px}
+.reihe{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0}
+.reihe>label,.reihe>span:first-child{font-size:15px;font-weight:500}
+.stepper{display:flex;align-items:center;gap:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);flex:none}
+.stepper button{width:44px;height:44px;border:0;background:none;font-size:21px;color:var(--primary);cursor:pointer}
+.stepper input{width:58px;height:44px;border:0;border-inline:1px solid var(--line);text-align:center;font-weight:600;font-size:16px;background:var(--accent-l);border-radius:0;appearance:textfield;-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button{display:none}
+.stepper span{padding:0 6px;font-size:13px;color:var(--muted)}
+.wahl{display:flex;gap:6px;flex-wrap:wrap}
+.wahl button{flex:1;min-height:44px;min-width:76px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;font-size:14px;font-weight:500;cursor:pointer;padding:4px 8px}
+.wahl button[aria-pressed=true]{background:var(--accent);color:var(--primary-d);border-color:var(--accent);font-weight:600}
+.block{margin-bottom:8px}
+.block>p{font-size:15px;font-weight:500;margin:8px 0 6px}
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.palette button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);min-height:82px;padding:6px 2px;font-size:13px;font-weight:500;cursor:pointer;position:relative}
+.palette button:hover{background:var(--accent-l)}
+.palette svg{width:38px;height:38px}
+.palette b{position:absolute;top:4px;right:6px;font-size:12px;color:var(--green-d);font-weight:600}
+.knopf{display:block;width:100%;min-height:48px;border-radius:var(--radius);border:0;background:var(--primary);color:#fff;font-weight:600;font-size:16px;cursor:pointer;margin-top:12px;padding:8px 12px}
+.knopf.zwei{background:#fff;color:var(--primary);border:1px solid var(--primary);font-weight:500}
+.knopf.leise{background:none;color:var(--muted);text-decoration:underline;font-weight:500;font-size:14px;margin-top:6px;min-height:40px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{font-size:13px;font-weight:600;border-radius:99px;padding:3px 10px}
+.chip.ok{background:var(--green-l);color:var(--green-d)}
+.chip.offen{background:var(--orange-l);color:var(--orange-d)}
+.feld{display:block;margin-bottom:10px;font-size:15px;font-weight:500}
+.feld input,.feld textarea{display:block;width:100%;margin-top:4px;padding:10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--accent-l);font-size:16px;font-weight:400}
+.feld textarea{min-height:68px;resize:vertical}
+.zweier{display:flex;gap:8px}
+.zweier .knopf{margin-top:8px}
+#meldung{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:14px;padding:8px 14px;border-radius:var(--radius);max-width:calc(100% - 32px);width:max-content;pointer-events:none;opacity:0;transition:opacity .2s}
+#meldung.an{opacity:1}
+@media (min-width:900px){
+  main{grid-template-rows:none;grid-template-columns:400px minmax(0,1fr)}
+  #panel{order:-1;border-top:0;border-right:1px solid var(--line)}
+}
+@media (max-height:620px) and (max-width:899px){main{grid-template-rows:minmax(0,1fr) minmax(0,52%)}}
+#neu-frage{border:0;border-radius:var(--radius);padding:20px;width:calc(100% - 32px);max-width:360px;color:var(--ink)}
+#neu-frage::backdrop{background:rgba(26,26,26,.5)}
+#neu-frage h2{font-size:18px;font-weight:600;margin:0 0 6px}
+#neu-frage p{margin:0 0 8px;color:var(--muted)}
+.wandbild{display:block;width:100%;min-height:0}
+.wand-kopf{display:flex;align-items:center;gap:6px;flex:none}
+.wand-kopf strong{flex:1;text-align:center;font-size:15px;font-weight:600}
+.wand-kopf button{width:44px;height:44px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;color:var(--primary);font-size:22px;line-height:1;cursor:pointer;flex:none}
+.wand-hinweis{flex:none;font-size:13px;color:var(--muted);margin:6px 0 0;text-align:center}
+#wand-seite{display:none;flex-direction:column;gap:8px;min-width:0;min-height:0;padding:12px;background:var(--canvas-l);border-left:1px solid var(--line)}
+#wand-seite .wandbild{flex:1}
+#b-ansicht{position:absolute;top:8px;right:8px;min-height:36px;padding:0 12px;border:1px solid var(--primary);border-radius:var(--radius);background:#fff;color:var(--primary);font-size:14px;font-weight:500;cursor:pointer}
+#wand-karte{display:none;position:absolute;left:8px;top:8px;width:min(46%,176px);padding:6px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:0 2px 10px rgba(26,26,26,.18);font-size:12px;font-weight:600;text-align:left;cursor:pointer}
+#wand-karte.an{display:block}
+#wand-karte.rechts{left:auto;right:8px}
+#wand-karte.unten{top:auto;bottom:8px}
+#wand-karte span{display:block;margin-bottom:4px}
+#wand-karte .wandbild{height:96px}
+#wand-gross{border:0;border-radius:var(--radius);padding:12px;width:calc(100% - 16px);max-width:640px;color:var(--ink)}
+#wand-gross::backdrop{background:rgba(26,26,26,.5)}
+#wand-gross .wandbild{max-height:min(58dvh,460px);margin-top:8px}
+@media (min-width:700px) and (min-height:600px){
+  #plan-box{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,38%);grid-template-rows:minmax(0,1fr)}
+  #wand-seite{display:flex}
+  #b-ansicht,#wand-karte{display:none!important}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Grundriss-Planer</h1>
+  <button id="b-zurueck" type="button" aria-label="Letzte Änderung rückgängig machen" title="Rückgängig">↶</button>
+  <button id="b-neu" type="button">Neu</button>
+</header>
+<dialog id="neu-frage" aria-labelledby="neu-titel">
+  <h2 id="neu-titel">Neu anfangen?</h2>
+  <p>Dein Grundriss und deine Fotos werden gelöscht.</p>
+  <div class="zweier">
+    <button id="neu-nein" class="knopf zwei" type="button" autofocus>Abbrechen</button>
+    <button id="neu-ja" class="knopf" type="button">Neu anfangen</button>
+  </div>
+</dialog>
+<dialog id="wand-gross" aria-label="Ansicht der Wand">
+  <div id="wand-gross-inhalt"></div>
+  <button id="wand-zu" class="knopf zwei" type="button">Schließen</button>
+</dialog>
+<main>
+  <div id="plan-box">
+    <svg id="plan" role="img" aria-label="Grundriss deines Badezimmers"></svg>
+    <aside id="wand-seite" aria-label="Ansicht der Wand"></aside>
+    <button id="b-ansicht" type="button">Ansicht</button>
+    <button id="wand-karte" type="button"></button>
+    <div id="meldung" role="status"></div>
+  </div>
+  <section id="panel">
+    <nav id="phasen" aria-label="Du bist hier"></nav>
+    <div id="inhalt"></div>
+    <div id="fuss"></div>
+    <input id="kamera" type="file" accept="image/*" hidden>
+  </section>
+</main>
+<script>
+'use strict';
+/* ---------- Einstellungen ---------- */
+const WHATSAPP = '4915739608287';
+/* Kurzfassung für die kostenlosen Varianten: ?modus=kurz. Der Rest wird erst nach dem Kauf gefragt. */
+const KURZ = new URLSearchParams(location.search).get('modus')==='kurz';
+const SPEICHER = KURZ ? 'grundriss-planer-kurz-v1' : 'grundriss-planer-v1';
+const WAND = 9;              // gezeichnete Wandstärke in cm
+const FARBE = {wand:'#46423E', obj:'#46423E', fuell:'#FFFFFF', aktiv:'#127CF2', raster:'#F0E7E1', text:'#46423E'};
+
+/* Objekte. auto = dreht sich mit dem Rücken zur Wand. Bestand = grau (DIN-Regel, kein Rot im Plan). */
+const TYP = {
+  tuer:{name:'Tür', art:'oeffnung', w:80},
+  fenster:{name:'Fenster', art:'oeffnung', w:100},
+  nische:{name:'Nische', art:'oeffnung', w:30},
+  wc:{name:'WC', w:40, d:60, auto:true},
+  waschtisch:{name:'Waschtisch', w:60, d:48, auto:true},
+  dusche:{name:'Dusche', w:90, d:90},
+  wanne:{name:'Badewanne', w:170, d:75},
+  heizung:{name:'Heizkörper', w:60, d:12, auto:true},
+  therme:{name:'Therme oder Boiler', w:45, d:35, auto:true, mitHoehe:true},
+  waschmaschine:{name:'Waschmaschine', w:60, d:60, auto:true},
+  schrank:{name:'Schrank', w:60, d:35, auto:true},
+  fallrohr:{name:'Fallrohr', w:15, d:15, frei:true},
+  strang:{name:'Abwasserleitung', w:120, d:6},
+  schacht:{name:'Schacht / Kasten', w:30, d:30, frei:true},
+  schraege:{name:'Dachschräge', w:200, d:80, auto:true, zone:true},
+  wand:{name:'Zwischenwand', w:120, d:10},
+  vorwand:{name:'Vorwand', w:120, d:20, auto:true},
+  dachfenster:{name:'Dachfenster', w:78, d:118, frei:true, oben:true},
+  sonstiges:{name:'Sonstiges', w:60, d:40},
+  ausgang:{name:'Ausgang Abwasser', w:14, d:14, frei:true, punkt:'AW'},
+  abfluss:{name:'Abfluss', w:14, d:14, frei:true, punkt:'A', mitHoehe:true},
+  warm:{name:'Warmwasser', w:14, d:14, frei:true, punkt:'WW', mitHoehe:true},
+  kalt:{name:'Kaltwasser', w:14, d:14, frei:true, punkt:'KW', mitHoehe:true},
+  ventil:{name:'Absperrventil', w:14, d:14, frei:true, punkt:'V', mitHoehe:true},
+  revision:{name:'Revisionsklappe', w:30, d:6, auto:true, mitHoehe:true},
+  schalter:{name:'Lichtschalter', art:'oeffnung', w:14, wandpunkt:'S'},
+  steckdose:{name:'Steckdose', art:'oeffnung', w:14, wandpunkt:'St'},
+  luefter:{name:'Lüfter', art:'oeffnung', w:18, wandpunkt:'L'},
+  lueftrohr:{name:'Lüftungsrohr', w:120, d:12, oben:true},
+  lueftschacht:{name:'Lüftungsschacht', w:30, d:30, frei:true},
+  fotopunkt:{name:'Foto', w:20, d:20, frei:true, foto:true},
+};
+
+/* Vollsanierung: Sanitärobjekte kommen raus, wichtig ist nur, wo sie stehen. Darum keine Größenfelder. */
+const SANITAER = ['wc','waschtisch','dusche','wanne'];
+const GERAET = {therme:'Gastherme', boiler:'Boiler', durchlauf:'Durchlauferhitzer', unklar:'Therme oder Boiler'};
+
+/* ---------- Zustand ---------- */
+const PARAM = new URLSearchParams(location.search);
+const leer = () => ({L:300, B:220, H:250, form:'rechteck', ecke:'or', aw:100, at:80, items:[], antw:{}, fotos:{}, heizung:[], wandInfo:{}, abwasser:{}, gebaeude:{}, lead:{}, bedarf:{}, vorname:PARAM.get('v')||'', notiz:''});
+let S = leer();
+let sel = null, schritt = 0, verlauf = [], ansicht = null, drag = null;
+const wrap = (id) => document.getElementById(id);
+const clamp = (v,a,b) => Math.min(Math.max(v,a),b);
+const r5 = (v) => Math.round(v/5)*5;
+const r1 = (v) => Math.round(v);
+const esc = (s) => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function ladeSpeicher(){
+  const m = location.hash.match(/p=([\w-]+)/);
+  if(m){ try{ S = {...leer(), ...JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))))}; schritt=9999; history.replaceState(null,'',location.pathname+location.search); return; }catch(e){} }
+  try{ const t = localStorage.getItem(SPEICHER); if(t){ S = {...leer(), ...JSON.parse(t)}; schritt=S.schritt||0; } }catch(e){}
+}
+function speichere(){ S.schritt=schritt; try{ localStorage.setItem(SPEICHER, JSON.stringify(S)); }catch(e){} }
+function merke(){ verlauf.push(JSON.stringify(S)); if(verlauf.length>60) verlauf.shift(); wrap('b-zurueck').disabled=false; }
+function planLink(){
+  if(!/^https?:/.test(location.protocol)) return '';
+  const {vorname,notiz,lead:_l,schritt:_s,...plan} = S;
+  const c = btoa(unescape(encodeURIComponent(JSON.stringify(plan)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const k = PARAM.get('k');
+  return location.origin+location.pathname+(k?'?k='+encodeURIComponent(k):'')+'#p='+c;
+}
+
+/* ---------- Raumgeometrie ---------- */
+function polygon(){
+  const {L,B,form,ecke} = S;
+  if(form!=='l') return [[0,0],[L,0],[L,B],[0,B]];
+  const a=S.aw, t=S.at;
+  if(ecke==='or') return [[0,0],[L-a,0],[L-a,t],[L,t],[L,B],[0,B]];
+  if(ecke==='ur') return [[0,0],[L,0],[L,B-t],[L-a,B-t],[L-a,B],[0,B]];
+  if(ecke==='ul') return [[0,0],[L,0],[L,B],[a,B],[a,B-t],[0,B-t]];
+  return [[a,0],[L,0],[L,B],[0,B],[0,t],[a,t]]; // ol
+}
+function kante(a,b,i){
+  const len = Math.hypot(b[0]-a[0],b[1]-a[1]);
+  const dx=(b[0]-a[0])/len, dy=(b[1]-a[1])/len;
+  return {i,a,b,len,dx,dy,nx:-dy,ny:dx,rot:dy===1?90:dy===-1?270:dx===1?0:180};
+}
+function waende(){
+  const p = polygon();
+  return p.map((a,i)=>kante(a,p[(i+1)%p.length],i));
+}
+/* Seiten von Zwischenwänden und Vorwänden: Objekte hängen dort genauso dran wie an den Raumwänden. Die Normale zeigt vom Teil weg. */
+function andockSeiten(ohne){
+  const l=[];
+  for(const o of S.items){
+    if(o===ohne||(o.t!=='wand'&&o.t!=='vorwand')) continue;
+    const {hx,hy}=halb(o), x0=o.x-hx, x1=o.x+hx, y0=o.y-hy, y1=o.y+hy;
+    for(const [a,b] of [[[x1,y0],[x0,y0]],[[x1,y1],[x1,y0]],[[x0,y1],[x1,y1]],[[x0,y0],[x0,y1]]]) l.push({...kante(a,b,-1),zusatz:true});
+  }
+  return l;
+}
+function aussparung(){
+  if(S.form!=='l') return null;
+  const {L,B,aw:a,at:t,ecke} = S;
+  return {x0:ecke.endsWith('r')?L-a:0, x1:ecke.endsWith('r')?L:a, y0:ecke[0]==='o'?0:B-t, y1:ecke[0]==='o'?t:B};
+}
+function nahWand(x,y,W){
+  let best=null;
+  for(const w of W){
+    const s = clamp((x-w.a[0])*w.dx+(y-w.a[1])*w.dy,0,w.len);
+    const d = Math.hypot(w.a[0]+w.dx*s-x, w.a[1]+w.dy*s-y);
+    if(!best||d<best.d-.001) best={w,s,d};
+  }
+  return best;
+}
+/* Wand A = Wand mit der ersten Tür, dann im Uhrzeigersinn (wie in unseren Wandansichten). */
+function wandBuchstaben(W){
+  const tuer = S.items.find(i=>i.t==='tuer');
+  const start = tuer ? nahWand(tuer.x,tuer.y,W).w.i : 0;
+  return W.map(w=>String.fromCharCode(65+((w.i-start+W.length)%W.length)));
+}
+/* Ecken für die Fotos: nur Außenecken, sortiert ab Wand A. */
+function ecken(){
+  const W=waende(), b=wandBuchstaben(W), n=W.length, ab=[];
+  W.forEach((w,i)=>{
+    const v=W[(i+n-1)%n];
+    if(v.dx*w.dy-v.dy*w.dx<=0) return;
+    ab.push({key:'ecke'+i, sort:b[i], name:`Ecke ${b[v.i]}/${b[i]}`, x:w.a[0]+(w.nx+v.nx)*26, y:w.a[1]+(w.ny+v.ny)*26});
+  });
+  return ab.sort((p,q)=>p.sort.localeCompare(q.sort));
+}
+/* Alle aufgenommenen Fotos in fester Reihenfolge: Ecken, dann Details. */
+function fotoListe(){
+  const l=ecken().filter(e=>S.fotos[e.key]).map(e=>({key:e.key,x:e.x,y:e.y,titel:'aus '+e.name}));
+  S.items.filter(i=>i.t==='fotopunkt'&&S.fotos[i.id]).forEach(i=>l.push({key:i.id,x:i.x,y:i.y,titel:i.text||'Detail'}));
+  return l.map((f,n)=>({...f,nr:n+1}));
+}
+function halb(it){ const d=dd(it), q=it.rot%180!==0; return {hx:(q?d.d:d.w)/2, hy:(q?d.w:d.d)/2}; }
+function dd(it){ return {w:it.w, d:it.d??0}; }
+function kiste(it){
+  if(TYP[it.t].art==='oeffnung'){
+    const W=waende(), n=nahWand(it.x,it.y,W), w=n.w, ax=it.w/2;
+    const tief = it.t==='tuer'&&it.auf!=='aussen' ? it.w : 0;
+    const xs=[it.x-w.dx*ax,it.x+w.dx*ax,it.x-w.dx*ax+w.nx*tief,it.x+w.dx*ax+w.nx*tief];
+    const ys=[it.y-w.dy*ax,it.y+w.dy*ax,it.y-w.dy*ax+w.ny*tief,it.y+w.dy*ax+w.ny*tief];
+    return {x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)};
+  }
+  const {hx,hy}=halb(it);
+  return {x0:it.x-hx,x1:it.x+hx,y0:it.y-hy,y1:it.y+hy};
+}
+function haltImRaum(it){
+  const {hx,hy}=halb(it);
+  it.x=clamp(it.x,Math.min(hx,S.L/2),Math.max(S.L-hx,S.L/2));
+  it.y=clamp(it.y,Math.min(hy,S.B/2),Math.max(S.B-hy,S.B/2));
+  const c=aussparung();
+  if(c && it.x+hx>c.x0 && it.x-hx<c.x1 && it.y+hy>c.y0 && it.y-hy<c.y1){
+    const opt=[];
+    if(c.x0>0) opt.push(['x',c.x0-hx]);
+    if(c.x1<S.L) opt.push(['x',c.x1+hx]);
+    if(c.y0>0) opt.push(['y',c.y0-hy]);
+    if(c.y1<S.B) opt.push(['y',c.y1+hy]);
+    opt.sort((a,b)=>Math.abs(it[a[0]]-a[1])-Math.abs(it[b[0]]-b[1]));
+    if(opt[0]) it[opt[0][0]]=opt[0][1];
+  }
+}
+function setzeOeffnung(it,x,y,raster){
+  const W=waende(), n=nahWand(x,y,W), w=n.w;
+  let s=raster?r5(n.s):n.s;
+  s=w.len>it.w?clamp(s,it.w/2,w.len-it.w/2):w.len/2;
+  it.x=w.a[0]+w.dx*s; it.y=w.a[1]+w.dy*s;
+}
+/* Anlegen an der Wand: dreht auto-Objekte mit dem Rücken zur Wand, rastet in Ecken ein. */
+function setzeObjekt(it,x,y,fang,raster){
+  const T=TYP[it.t], W=T.zone||T.oben?waende():waende().concat(andockSeiten(it));
+  if(T.auto){
+    let best=null;
+    for(const w of W){
+      if(w.zusatz&&w.len<25) continue; // Stirnseite einer dünnen Wand
+      const s=(x-w.a[0])*w.dx+(y-w.a[1])*w.dy;
+      if(s<-fang||s>w.len+fang) continue;
+      const lot=(x-w.a[0])*w.nx+(y-w.a[1])*w.ny;
+      const luecke=lot-it.d/2;
+      if(lot>-fang && Math.abs(luecke)<Math.max(fang,it.d*.5) && (!best||Math.abs(luecke)<best.g)) best={w,g:Math.abs(luecke),s};
+    }
+    if(best){
+      it.rot=best.w.rot;
+      const lx=best.w.a[0]+best.w.nx*it.d/2, ly=best.w.a[1]+best.w.ny*it.d/2;
+      if(best.w.nx!==0) x=lx; else y=ly;
+      if(T.zone){ it.w=best.w.len; x=best.w.nx!==0?lx:best.w.a[0]+best.w.dx*best.w.len/2; y=best.w.ny!==0?ly:best.w.a[1]+best.w.dy*best.w.len/2; }
+    }
+  }
+  const {hx,hy}=halb(it);
+  let bx=null,by=null;
+  for(const w of W){
+    if(w.dy!==0){
+      const yMin=Math.min(w.a[1],w.b[1]),yMax=Math.max(w.a[1],w.b[1]);
+      const lu=w.zusatz?-1:1; // an Zwischenwänden nur, wenn es wirklich daneben steht
+      if(y+hy<yMin-lu||y-hy>yMax+lu) continue;
+      const c=w.a[0]+w.nx*hx, g=Math.abs(x-c);
+      if(g<fang&&(bx===null||g<bx.g)) bx={g,c};
+    }else{
+      const xMin=Math.min(w.a[0],w.b[0]),xMax=Math.max(w.a[0],w.b[0]);
+      const lu=w.zusatz?-1:1;
+      if(x+hx<xMin-lu||x-hx>xMax+lu) continue;
+      const c=w.a[1]+w.ny*hy, g=Math.abs(y-c);
+      if(g<fang&&(by===null||g<by.g)) by={g,c};
+    }
+  }
+  it.x=bx?bx.c:(raster?r5(x):x);
+  it.y=by?by.c:(raster?r5(y):y);
+  haltImRaum(it);
+}
+function normalisieren(){
+  const W=waende();
+  for(const it of S.items){
+    if(TYP[it.t].art==='oeffnung') setzeOeffnung(it,it.x,it.y,false);
+    else if(TYP[it.t].zone){ setzeObjekt(it,it.x,it.y,9999,false); }
+    else { const f=nahWand(it.x,it.y,W); haltImRaum(it); void f; }
+  }
+}
+/* Freien Platz suchen, wenn ein Objekt neu dazukommt. */
+function ueberlapp(k,ohne){
+  let f=0;
+  for(const o of S.items){ if(o===ohne||TYP[o.t].zone||TYP[o.t].oben) continue; const b=kiste(o);
+    const w=Math.min(k.x1,b.x1)-Math.max(k.x0,b.x0), h=Math.min(k.y1,b.y1)-Math.max(k.y0,b.y0);
+    if(w>0&&h>0) f+=w*h; }
+  return f;
+}
+function neuesObjekt(t){
+  const T=TYP[t], W=waende().slice().sort((a,b)=>b.len-a.len);
+  const it={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5), t, w:T.w, rot:0, x:0, y:0};
+  if(T.art==='oeffnung'){
+    if(t==='tuer'){ it.anschlag='links'; it.auf='innen'; }
+    else if(t==='fenster'){ it.bruestung=90; }
+    else if(t==='nische'){ it.hoehe=100; it.nh=60; it.d=10; it.sitzt='wand'; }
+    else { it.hoehe=null; if(t==='schalter') it.seite='innen'; }
+    const tuer=S.items.find(o=>o.t==='tuer');
+    let best=null;
+    for(const w of W){ if(w.len<it.w) continue;
+      for(let s=it.w/2+(t==='tuer'?15:0); s<=w.len-it.w/2; s+=5){
+        const x=w.a[0]+w.dx*s, y=w.a[1]+w.dy*s;
+        const pruef={...it,x,y};
+        const fremd=TYP[t].wandpunkt?(o=>o.t===t):(o=>o.t==='tuer'||o.t==='fenster');
+        const stoer=S.items.filter(o=>fremd(o)&&nahWand(o.x,o.y,waende()).w.i===w.i).length;
+        // Fenster und Steckdose sitzen meist mittig, der Schalter neben der Tür.
+        let mitte=t==='tuer'?0:Math.abs(s-w.len/2);
+        if(t==='schalter'&&tuer) mitte=Math.hypot(x-tuer.x,y-tuer.y);
+        if(TYP[t].wandpunkt&&S.items.some(o=>(o.t==='tuer'||o.t==='fenster')&&Math.hypot(x-o.x,y-o.y)<o.w/2+12)) mitte+=9000;
+        const sc=ueberlapp(kiste(pruef),it)+stoer*5000+mitte;
+        if(!best||sc<best.sc){ best={sc,x,y}; }
+      }
+    }
+    if(best){ it.x=best.x; it.y=best.y; } else { it.x=W[0].a[0]+W[0].dx*W[0].len/2; it.y=W[0].a[1]+W[0].dy*W[0].len/2; }
+    setzeOeffnung(it,it.x,it.y,false);
+    return it;
+  }
+  it.d=T.d;
+  if(t==='schraege') it.knie=100;
+  if(t==='vorwand') it.hoehe=120;
+  if(t==='dachfenster'){ const z=S.items.find(i=>TYP[i.t].zone); if(z){ it.x=z.x; it.y=z.y; it.rot=z.rot; haltImRaum(it); return it; } }
+  if(t==='wand'||t==='strang'||t==='lueftrohr'){
+    if(t==='wand'){ it.wandArt='decke'; it.hoehe=null; }
+    const w=W.find(z=>z.len>=60)||W[0];
+    it.w=Math.min(120,r5((w.dx!==0?S.B:S.L)*.45)); it.rot=w.dx!==0?90:0;
+    it.x=w.a[0]+w.dx*w.len/2+w.nx*it.w/2; it.y=w.a[1]+w.dy*w.len/2+w.ny*it.w/2;
+    haltImRaum(it); return it;
+  }
+  if(T.zone){ const w=W[0]; it.w=w.len; it.rot=w.rot; it.x=w.a[0]+w.dx*w.len/2+w.nx*it.d/2; it.y=w.a[1]+w.dy*w.len/2+w.ny*it.d/2; return it; }
+  let best=null;
+  for(const w of W){
+    const q=T.frei?it.w:it.w;
+    if(w.len<q) continue;
+    for(let s=q/2;s<=w.len-q/2;s+=10){
+      const p={...it,rot:T.frei?0:w.rot,x:0,y:0};
+      const d=T.frei?it.d:it.d;
+      p.x=w.a[0]+w.dx*s+w.nx*d/2; p.y=w.a[1]+w.dy*s+w.ny*d/2;
+      const sc=ueberlapp(kiste(p),it);
+      if(!best||sc<best.sc-1){ best={sc,...p}; }
+      if(sc===0) break;
+    }
+    if(best&&best.sc===0) break;
+  }
+  if(best){ it.x=best.x; it.y=best.y; it.rot=best.rot; } else { it.x=S.L/2; it.y=S.B/2; }
+  haltImRaum(it);
+  return it;
+}
+
+/* Abstand vom Punkt in eine Richtung bis zur nächsten Wand. */
+function strahl(x,y,dx,dy,W){
+  let best=null;
+  for(const w of W){
+    if(dx!==0&&w.dy!==0){
+      const t=(w.a[0]-x)*dx, a=Math.min(w.a[1],w.b[1]), b=Math.max(w.a[1],w.b[1]);
+      if(t>=-.01&&y>=a-.01&&y<=b+.01&&(!best||t<best.d)) best={d:Math.max(t,0),w};
+    }
+    if(dy!==0&&w.dx!==0){
+      const t=(w.a[1]-y)*dy, a=Math.min(w.a[0],w.b[0]), b=Math.max(w.a[0],w.b[0]);
+      if(t>=-.01&&x>=a-.01&&x<=b+.01&&(!best||t<best.d)) best={d:Math.max(t,0),w};
+    }
+  }
+  return best;
+}
+
+/* ---------- Symbole von oben (Mitte = 0,0; Rücken zur Wand bei y = -d/2) ---------- */
+function symbol(t,w,d,c,sw,f){
+  const a=`fill="${f}" stroke="${c}" stroke-width="${sw}"`, n=`fill="none" stroke="${c}" stroke-width="${sw}"`;
+  const R=(x,y,b,h,r=0,x2=a)=>`<rect x="${x}" y="${y}" width="${b}" height="${h}" rx="${r}" ${x2}/>`;
+  const hw=w/2,hd=d/2;
+  if(TYP[t]&&TYP[t].punkt) return `<circle r="${hw}" ${a}/><text font-size="${w*(TYP[t].punkt.length>1?.46:.62)}" font-weight="700" fill="${c}" text-anchor="middle" dominant-baseline="central">${TYP[t].punkt}</text>`;
+  switch(t){
+    case 'sonstiges': return R(-hw,-hd,w,d,2);
+    case 'wand': return R(-hw,-hd,w,d,0,`fill="${c}" stroke="${c}" stroke-width="${sw}"`);
+    case 'vorwand': { let q=''; for(let x=-hw+8;x<hw;x+=12) q+=`M${x-Math.min(4,hd)} ${hd}L${x+Math.min(4,hd)} ${-hd}`; return R(-hw,-hd,w,d)+`<path d="${q}" ${n} stroke-opacity=".45"/>`; }
+    case 'dachfenster': { const m=Math.min(w,d)*.12; return R(-hw,-hd,w,d,0,`${n} stroke-dasharray="${sw*5} ${sw*3}"`)+R(-hw+m,-hd+m,w-2*m,d-2*m,0,n); }
+    case 'eckwanne': { const k=.36, x=-hw+k*w, y=-hd+k*d; return `<path d="M${-hw} ${-hd}H${hw}V${y}Q${hw*.42} ${hd*.42} ${x} ${hd}H${-hw}Z" ${a}/>`+`<ellipse cx="${-hw*.14}" cy="${-hd*.14}" rx="${w*.3}" ry="${w*.2}" transform="rotate(-45 ${-hw*.14} ${-hd*.14})" ${n}/>`+`<circle cx="${-hw*.5}" cy="${-hd*.5}" r="${w*.03}" fill="${c}"/>`; }
+    case 'revision': return R(-hw,-hd,w,d)+`<path d="M${-hw} ${hd}L${hw} ${-hd}" ${n}/>`;
+    case 'wc':{ const tk=Math.min(d*.28,18); return R(-hw,-hd,w,tk,2)+`<ellipse cx="0" cy="${(tk)/2}" rx="${hw*.88}" ry="${(d-tk)/2-1}" ${a}/>`+`<ellipse cx="0" cy="${tk/2+2}" rx="${hw*.52}" ry="${(d-tk)/2*.58}" ${n}/>`; }
+    case 'waschtisch': return R(-hw,-hd,w,d,3)+`<ellipse cx="0" cy="${d*.06}" rx="${hw*.72}" ry="${hd*.66}" ${n}/>`+`<circle cx="0" cy="${-hd+d*.13}" r="${Math.min(w,d)*.045}" fill="${c}"/>`;
+    case 'dusche': return R(-hw,-hd,w,d)+`<path d="M${-hw} ${-hd}L${hw} ${hd}M${hw} ${-hd}L${-hw} ${hd}" ${n}/>`+`<circle cx="0" cy="0" r="${Math.min(w,d)*.07}" ${a}/>`;
+    case 'wanne': { const m=Math.min(w,d)*.1; return R(-hw,-hd,w,d,2)+R(-hw+m,-hd+m,w-2*m,d-2*m,Math.min(w,d)*.22,n)+`<circle cx="${hw-m*2.6}" cy="0" r="${Math.min(w,d)*.05}" fill="${c}"/>`; }
+    case 'heizung': { // Rippen von oben, von beiden Seiten gleich: kein Vorne und Hinten
+      const z=Math.max(3,Math.round(w/6)), st=w/z; let q='';
+      for(let i=1;i<z;i++) q+=`M${-hw+i*st} ${-hd}V${hd}`;
+      return R(-hw,-hd,w,d,1)+`<path d="${q}" ${n}/>`; }
+    case 'strang': return `<path d="M${-hw} 0H${hw}" stroke="${c}" stroke-width="${d}" stroke-opacity=".25"/><path d="M${-hw} 0H${hw}" stroke="${c}" stroke-width="${sw*1.5}" stroke-dasharray="${sw*6} ${sw*4}"/>`;
+    case 'therme': return R(-hw,-hd,w,d,2)+`<circle r="${Math.min(w,d)*.28}" ${n}/>`+`<path d="M${-hw*.3} 0H${hw*.3}" ${n}/>`;
+    case 'lueftrohr': return `<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${c}" fill-opacity=".08"/><path d="M${-hw} ${-hd}H${hw}M${-hw} ${hd}H${hw}" ${n} stroke-dasharray="${sw*6} ${sw*3}"/>`;
+    case 'lueftschacht': return R(-hw,-hd,w,d,0,`fill="${c}" fill-opacity=".1" stroke="${c}" stroke-width="${sw*1.5}"`)+`<circle r="${Math.min(w,d)*.3}" ${n}/><circle r="${Math.min(w,d)*.12}" fill="${c}"/>`;
+    case 'waschmaschine': return R(-hw,-hd,w,d,2)+`<circle cx="0" cy="${d*.03}" r="${Math.min(w,d)*.3}" ${n}/>`+`<path d="M${-hw} ${-hd+d*.12}H${hw}" ${n}/>`;
+    case 'schrank': return R(-hw,-hd,w,d)+`<path d="M${-hw} ${-hd}L${hw} ${hd}M${hw} ${-hd}L${-hw} ${hd}" ${n} stroke-dasharray="${sw*4} ${sw*3}"/>`;
+    case 'fallrohr': return `<circle r="${hw}" fill="${c}" fill-opacity=".18" stroke="${c}" stroke-width="${sw*1.5}"/><path d="M${-hw*.7} ${-hw*.7}L${hw*.7} ${hw*.7}M${hw*.7} ${-hw*.7}L${-hw*.7} ${hw*.7}" ${n}/>`;
+    case 'schacht': { let s=R(-hw,-hd,w,d,0,`fill="${c}" fill-opacity=".14" stroke="${c}" stroke-width="${sw*1.5}"`); return s+`<path d="M${-hw} ${-hd}L${hw} ${hd}M${hw} ${-hd}L${-hw} ${hd}" ${n}/>`; }
+    case 'schraege': { let s=R(-hw,-hd,w,d,0,`fill="${c}" fill-opacity=".07" stroke="none"`)+`<path d="M${-hw} ${hd}H${hw}" ${n} stroke-dasharray="${sw*5} ${sw*4}"/>`; for(let x=-hw+15;x<hw;x+=25) s+=`<path d="M${x} ${-hd}V${hd-4}" ${n} stroke-opacity=".3"/>`; return s; }
+  }
+  return '';
+}
+function wandSymbol(it,c,sw){
+  const hw=it.w/2,hd=it.d/2,rand=`stroke="${c}" stroke-width="${sw}"`;
+  if(it.wandArt==='glas') return `<rect x="${-hw}" y="${-hd}" width="${it.w}" height="${it.d}" fill="#fff" ${rand}/><path d="M${-hw} 0H${hw}" ${rand} stroke-dasharray="${sw*5} ${sw*3}"/>`;
+  if(it.wandArt==='halb'){ let q=''; for(let x=-hw+6;x<hw;x+=8) q+=`M${x-3} ${hd}L${x+3} ${-hd}`; return `<rect x="${-hw}" y="${-hd}" width="${it.w}" height="${it.d}" fill="#fff" ${rand}/><path d="${q}" ${rand}/>`; }
+  return `<rect x="${-hw}" y="${-hd}" width="${it.w}" height="${it.d}" fill="${c}" ${rand}/>`;
+}
+function oeffnungSymbol(it,c,sw){
+  const zeichen=TYP[it.t].wandpunkt;
+  if(zeichen){ const y=it.seite==='aussen'?-WAND-it.w/2-1:it.w/2+1;
+    return `<circle cy="${y}" r="${it.w/2}" fill="#fff" stroke="${c}" stroke-width="${sw}"/><text y="${y}" font-size="${it.w*(zeichen.length>1?.46:.62)}" font-weight="700" fill="${c}" text-anchor="middle" dominant-baseline="central">${zeichen}</text>`; }
+  const hw=it.w/2, band=`<rect x="${-hw}" y="${-WAND-.5}" width="${it.w}" height="${WAND+1}" fill="#fff"/>`;
+  if(it.t==='nische') return `<path d="M${-hw} ${-.5}V${-WAND*.65}H${hw}V${-.5}Z" fill="#fff" stroke="#fff"/><path d="M${-hw} 0V${-WAND*.65}H${hw}V0" fill="none" stroke="${c}" stroke-width="${sw}"/>`;
+  if(it.t==='fenster') return band+`<path d="M${-hw} ${-WAND}H${hw}V0H${-hw}Z M${-hw} ${-WAND/2}H${hw}" fill="none" stroke="${c}" stroke-width="${sw}"/>`;
+  const links=it.anschlag!=='rechts', sg=it.auf==='aussen'?-1:1, hx=links?-hw:hw, y0=sg>0?0:-WAND, tip=y0+sg*it.w;
+  const sweep=links===(sg>0)?0:1;
+  return band+`<path d="M${hx} ${y0}V${tip}" stroke="${c}" stroke-width="${sw*2}" fill="none"/>`+
+    `<path d="M${hx} ${tip}A${it.w} ${it.w} 0 0 ${sweep} ${links?hw:-hw} ${y0}" stroke="${c}" stroke-width="${sw*.8}" fill="none" stroke-dasharray="${sw*3} ${sw*2.5}"/>`;
+}
+function iconSvg(t){
+  const T=TYP[t], zeichen=T.punkt||T.wandpunkt;
+  if(zeichen) return `<svg viewBox="-22 -22 44 44" font-family="Poppins,sans-serif"><circle r="19" fill="#fff" stroke="#46423E" stroke-width="2.4"/><text font-size="${zeichen.length>1?17:23}" font-weight="700" fill="#46423E" text-anchor="middle" dominant-baseline="central">${zeichen}</text></svg>`;
+  if(t==='tuer') return `<svg viewBox="-5 -5 60 60"><path d="M0 50H50" stroke="#46423E" stroke-width="5"/><path d="M6 50V8" stroke="#46423E" stroke-width="3"/><path d="M6 8A42 42 0 0 1 48 50" fill="none" stroke="#46423E" stroke-width="1.6" stroke-dasharray="4 3"/></svg>`;
+  if(t==='nische') return `<svg viewBox="-5 -5 60 60"><path d="M0 12H12V38H0M50 12H38V38H50" fill="none"/><path d="M0 25H14V12H36V25H50" fill="none" stroke="#46423E" stroke-width="5"/></svg>`;
+  if(t==='fenster') return `<svg viewBox="-5 -5 60 60"><path d="M0 25H10M40 25H50" stroke="#46423E" stroke-width="6"/><path d="M10 20H40V30H10ZM10 25H40" fill="#fff" stroke="#46423E" stroke-width="2"/></svg>`;
+  const w=t==='heizung'?60:t==='wanne'?70:t==='schraege'?70:t==='schrank'?60:(T.w>70?70:T.w), d=t==='heizung'?14:t==='wanne'?36:t==='schraege'?40:t==='schrank'?34:T.d;
+  const m=Math.max(w,d)*1.1, sw=m/38;
+  return `<svg viewBox="${-m/2} ${-m/2} ${m} ${m}">${symbol(t,w,d,'#46423E',sw,'#fff')}</svg>`;
+}
+
+/* ---------- Plan zeichnen ---------- */
+function rahmen(W,H,fixPx){
+  let x0=0,y0=0,x1=S.L,y1=S.B;
+  for(const it of S.items) if(it.t==='tuer'&&it.auf==='aussen'){ const n=nahWand(it.x,it.y,waende()).w; const px=it.x-n.nx*(it.w+WAND), py=it.y-n.ny*(it.w+WAND); x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py); }
+  const m=fixPx, sc=Math.min((W-2*m)/(x1-x0),(H-2*m)/(y1-y0));
+  const vw=W/sc, vh=H/sc;
+  return {sc, x:(x0+x1)/2-vw/2, y:(y0+y1)/2-vh/2, w:vw, h:vh};
+}
+function maszLinie(x1,y1,x2,y2,txt,px,col){
+  const mx=(x1+x2)/2,my=(y1+y2)/2,fs=12.5*px,bw=(String(txt).length*7.4+8)*px,bh=18*px;
+  return `<path d="M${x1} ${y1}L${x2} ${y2}" stroke="${col}" stroke-width="${1.2*px}"/>`+
+    `<rect x="${mx-bw/2}" y="${my-bh/2}" width="${bw}" height="${bh}" rx="${3*px}" fill="#E7F1FE" stroke="${col}" stroke-width="${.8*px}"/>`+
+    `<text x="${mx}" y="${my+fs*.36}" font-size="${fs}" font-weight="600" text-anchor="middle" fill="#0A4E99">${txt}</text>`;
+}
+function zeichne(v,o={}){
+  const px=1/v.sc, W=waende(), bst=wandBuchstaben(W), poly=polygon().map(p=>p.join(',')).join(' ');
+  const font=o.export?'Helvetica,Arial,sans-serif':'Poppins,system-ui,sans-serif';
+  let s=`<defs><clipPath id="innen"><polygon points="${poly}"/></clipPath></defs>`;
+  s+=`<g font-family="${font}">`;
+  // Wände außen, Raum innen, Raster 50 cm
+  s+=`<polygon points="${poly}" fill="${FARBE.wand}" stroke="${FARBE.wand}" stroke-width="${WAND*2}" stroke-linejoin="miter"/>`;
+  s+=`<polygon points="${poly}" fill="#fff"/>`;
+  let r='';
+  for(let x=50;x<S.L;x+=50) r+=`M${x} 0V${S.B}`;
+  for(let y=50;y<S.B;y+=50) r+=`M0 ${y}H${S.L}`;
+  s+=`<path d="${r}" stroke="${FARBE.raster}" stroke-width="${px}" clip-path="url(#innen)"/>`;
+  // Wand, nach der gerade gefragt wird
+  const frageJetzt=o.export?null:akt();
+  if(frageJetzt&&frageJetzt.art==='wandinfo'){ const q=W[frageJetzt.wi]; s+=`<path class="puls" d="M${q.a[0]-q.nx*WAND/2} ${q.a[1]-q.ny*WAND/2}L${q.b[0]-q.nx*WAND/2} ${q.b[1]-q.ny*WAND/2}" stroke="${FARBE.aktiv}" stroke-width="${WAND}" stroke-linecap="square"/>`; }
+  // Wandbeschriftung außen
+  for(const w of W){
+    const ab=(o.export?30:16)*px, senk=w.dy!==0;
+    let mitteS=w.len/2;
+    const halbTxt=(o.export?120:62)*px;
+    for(const it of S.items) if((it.seite==='aussen'||it.auf==='aussen')&&nahWand(it.x,it.y,W).w.i===w.i){ const q=nahWand(it.x,it.y,W).s; if(Math.abs(q-mitteS)<halbTxt+it.w) mitteS=q<w.len/2?q+halbTxt+it.w:q-halbTxt-it.w; }
+    const mx=w.a[0]+w.dx*mitteS-w.nx*(WAND+ab), my=w.a[1]+w.dy*mitteS-w.ny*(WAND+ab);
+    const f=(o.export?30:12.5)*px;
+    if(!o.skizze) s+=`<text x="${mx}" y="${my}" font-size="${f}" font-weight="600" fill="${FARBE.text}" text-anchor="middle" dominant-baseline="central"${senk?` transform="rotate(-90 ${mx} ${my})"`:''}>${w.len*v.sc<(o.export?380:170)?'':'Wand '}${bst[w.i]} · ${r1(w.len)} cm</text>`;
+  }
+  // Objekte: große zuerst, kleine obenauf
+  const rang=i=>TYP[i.t].zone?2:TYP[i.t].oben?1:0;
+  const technik=i=>TYP[i.t].punkt||TYP[i.t].wandpunkt||['strang','lueftrohr','revision','lueftschacht'].includes(i.t);
+  const liste=S.items.filter(i=>i.t!=='fotopunkt'&&!(o.skizze&&technik(i))).sort((a,b)=>rang(b)-rang(a)||(b.w*(b.d||20))-(a.w*(a.d||20)));
+  const treffer=[]; let oben='';
+  for(const it of liste){
+    const T=TYP[it.t], ak=sel===it.id, c=ak?FARBE.aktiv:FARBE.obj, sw=(ak?2:1.4)*px;
+    if(T.art==='oeffnung'){
+      const w=nahWand(it.x,it.y,W).w, deg=Math.atan2(w.dy,w.dx)*180/Math.PI;
+      s+=`<g transform="translate(${it.x} ${it.y}) rotate(${deg})">${oeffnungSymbol(it,c,sw)}</g>`;
+      const hit=Math.max(it.w,44*px), tief=Math.max(40*px,it.t==='tuer'?it.w*.6:0);
+      treffer.push(`<g data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${deg})"><rect x="${-hit/2}" y="${-WAND-14*px}" width="${hit}" height="${WAND+14*px+tief}" fill="transparent"/></g>`);
+    }else{
+      const zeichen=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})">${it.t==='wand'?wandSymbol(it,c,sw):symbol(it.form==='eck'?'eckwanne':it.t,it.w,it.d,c,sw,FARBE.fuell)}</g>`;
+      if(T.oben) oben+=zeichen; else s+=zeichen;
+      const {hx,hy}=halb(it), fs=(o.skizze?24:11.5)*px, kurz=it.form==='eck'?'Eckwanne':it.t==='therme'&&GERAET[it.geraet]&&it.geraet!=='unklar'?GERAET[it.geraet]:T.name.split(' ')[0], nm=it.text||(it.aufPodest==='ja'?kurz+' · Podest':kurz);
+      if((!o.export||o.skizze) && !T.punkt && it.t!=='wand' && it.t!=='heizung' && 2*hx>nm.length*fs*.62+4*px && 2*hy>fs*1.3)
+        s+=`<text x="${it.x}" y="${it.y}" font-size="${fs}" font-weight="500" fill="${c}" text-anchor="middle" dominant-baseline="central" paint-order="stroke" stroke="#fff" stroke-width="${(o.skizze?8:3)*px}">${nm}</text>`;
+      const bw=Math.max(2*hx,44*px), bh=Math.max(2*hy,44*px);
+      treffer.push(`<rect data-id="${it.id}" x="${it.x-bw/2}" y="${it.y-bh/2}" width="${bw}" height="${bh}" fill="transparent"/>`);
+    }
+  }
+  s+=oben;
+  // Nummern im Export, passend zur Liste
+  if(o.export&&!o.skizze) S.items.filter(i=>i.t!=='fotopunkt').forEach((it,n)=>{
+    const k=kiste(it), q=TYP[it.t].art==='oeffnung'?nahWand(it.x,it.y,W).w:null, klein=TYP[it.t].punkt;
+    const cx=(k.x0+k.x1)/2+(klein?(it.x<S.L/2?1:-1)*38*px:0), cy=(k.y0+k.y1)/2+(klein?(it.y<S.B/2?1:-1)*38*px:0);
+    const x=q?it.x+q.nx*(TYP[it.t].wandpunkt?60:36)*px:cx, y=q?it.y+q.ny*(TYP[it.t].wandpunkt?60:36)*px:cy;
+    s+=`<circle cx="${x}" cy="${y}" r="${21*px}" fill="#fff" stroke="${FARBE.obj}" stroke-width="${2*px}"/><text x="${x}" y="${y}" font-size="${26*px}" font-weight="700" fill="${FARBE.obj}" text-anchor="middle" dominant-baseline="central">${n+1}</text>`;
+  });
+  // Kameras: wo die Fotos entstanden sind, dazu die Ecke, in der jetzt fotografiert wird
+  const jetzt=o.export?null:akt(), mz=(o.export?1.7:1)*px;
+  const kamera=(x,y,txt,farbe,puls)=>{
+    const dx=S.L/2-x, dy=S.B/2-y, l=Math.hypot(dx,dy)||1, ux=dx/l, uy=dy/l;
+    return `<g${puls?' class="puls"':''}><path d="M${x+ux*24*mz} ${y+uy*24*mz}L${x+ux*11*mz-uy*9*mz} ${y+uy*11*mz+ux*9*mz}L${x+ux*11*mz+uy*9*mz} ${y+uy*11*mz-ux*9*mz}Z" fill="${farbe}"/><circle cx="${x}" cy="${y}" r="${13*mz}" fill="${farbe}"/><text x="${x}" y="${y}" font-size="${14*mz}" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="central">${txt}</text></g>`;
+  };
+  if(!o.skizze) fotoListe().forEach(f=>{ if(jetzt&&jetzt.fotoKey===f.key) return; s+=kamera(f.x,f.y,f.nr,sel===f.key?FARBE.aktiv:FARBE.wand,false); });
+  if(jetzt&&jetzt.art==='foto'){ const nr=(fotoListe().find(f=>f.key===jetzt.fotoKey)||{}).nr||'+'; s+=kamera(jetzt.ecke.x,jetzt.ecke.y,nr,FARBE.aktiv,true); }
+  if(jetzt&&jetzt.ph===4) S.items.filter(i=>i.t==='fotopunkt').forEach(i=>{ const b=44*px; treffer.push(`<rect data-id="${i.id}" x="${i.x-b/2}" y="${i.y-b/2}" width="${b}" height="${b}" fill="transparent"/>`); });
+  // Abstände zum gewählten Objekt
+  const a=S.items.find(i=>i.id===sel);
+  if(a&&!o.export&&a.t!=='fotopunkt'){
+    const col=FARBE.aktiv;
+    if(TYP[a.t].art==='oeffnung'){
+      const n=nahWand(a.x,a.y,W), w=n.w, off=26*px;
+      const l=n.s-a.w/2, re=w.len-n.s-a.w/2;
+      const P=(s2)=>[w.a[0]+w.dx*s2+w.nx*off,w.a[1]+w.dy*s2+w.ny*off];
+      if(l>1){ const p=P(0),q=P(l); s+=maszLinie(p[0],p[1],q[0],q[1],r1(l),px,col); }
+      if(re>1){ const p=P(w.len-re),q=P(w.len); s+=maszLinie(p[0],p[1],q[0],q[1],r1(re),px,col); }
+    }else{
+      const k=kiste(a),cx=(k.x0+k.x1)/2,cy=(k.y0+k.y1)/2;
+      const lx=strahl(k.x0,cy,-1,0,W),rx=strahl(k.x1,cy,1,0,W),oy=strahl(cx,k.y0,0,-1,W),uy=strahl(cx,k.y1,0,1,W);
+      if(lx&&lx.d>1) s+=maszLinie(k.x0-lx.d,cy,k.x0,cy,r1(lx.d),px,col);
+      if(rx&&rx.d>1) s+=maszLinie(k.x1,cy,k.x1+rx.d,cy,r1(rx.d),px,col);
+      if(oy&&oy.d>1) s+=maszLinie(cx,k.y0-oy.d,cx,k.y0,r1(oy.d),px,col);
+      if(uy&&uy.d>1) s+=maszLinie(cx,k.y1,cx,k.y1+uy.d,r1(uy.d),px,col);
+    }
+  }
+  if(!o.export){
+    s+=treffer.join('');
+    const griff=(id,x,y,pfeil)=>`<g data-griff="${id}"><circle cx="${x}" cy="${y}" r="${22*px}" fill="transparent"/><circle cx="${x}" cy="${y}" r="${13*px}" fill="${FARBE.aktiv}" stroke="#fff" stroke-width="${2*px}"/><text x="${x}" y="${y}" font-size="${15*px}" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="central" font-family="sans-serif">${pfeil}</text></g>`;
+    if(a&&(a.t==='wand'||a.t==='strang'||a.t==='lueftrohr')){
+      const q=a.rot%180!==0, ax=q?0:a.w/2, ay=q?a.w/2:0, pf=q?'↕':'↔';
+      s+=griff('E-1',a.x-ax,a.y-ay,pf)+griff('E1',a.x+ax,a.y+ay,pf);
+    }
+    if(akt().griffe){
+      const re=W.filter(w=>w.dy!==0&&Math.abs(w.a[0]-S.L)<.1).sort((a,b)=>b.len-a.len)[0];
+      const un=W.filter(w=>w.dx!==0&&Math.abs(w.a[1]-S.B)<.1).sort((a,b)=>b.len-a.len)[0];
+      if(re) s+=griff('L',S.L,(re.a[1]+re.b[1])/2,'↔');
+      if(un) s+=griff('B',(un.a[0]+un.b[0])/2,S.B,'↕');
+    }
+  }
+  return s+'</g>';
+}
+function maleplan(){
+  const svg=wrap('plan'), b=svg.getBoundingClientRect();
+  if(!b.width||!b.height) return;
+  if(!drag||!ansicht) ansicht=rahmen(b.width,b.height,46);
+  const v=ansicht;
+  svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);
+  svg.innerHTML=zeichne(v);
+  maleWand();
+}
+
+/* ---------- Wandansicht: die Wand von vorn, so als steht man im Raum davor ---------- */
+let wandI=0, wandFuer=null, wandUhr=null;
+const dauerhaft=()=>matchMedia('(min-width:700px) and (min-height:600px)').matches;
+/* Lage eines Objekts zur Wand: a bis b entlang der Wand (von links), g = Abstand zur Wand. */
+function vorWand(it,w){
+  const k=kiste(it), pkt=[[k.x0,k.y0],[k.x1,k.y0],[k.x0,k.y1],[k.x1,k.y1]];
+  const s=pkt.map(p=>(p[0]-w.a[0])*w.dx+(p[1]-w.a[1])*w.dy), g=pkt.map(p=>(p[0]-w.a[0])*w.nx+(p[1]-w.a[1])*w.ny);
+  return {a:Math.min(...s), b:Math.max(...s), g:Math.min(...g)};
+}
+function wandVon(it,W){
+  if(TYP[it.t].art==='oeffnung') return nahWand(it.x,it.y,W).w;
+  let best=null;
+  for(const w of W){
+    if(it.t==='wand'&&w.rot%180!==it.rot%180) continue;
+    const p=vorWand(it,w);
+    if(p.g<-1||p.a>=w.len||p.b<=0) continue;
+    const wert=p.g-((it.rot%360)===w.rot?2:0);
+    if(!best||wert<best.wert) best={w,wert};
+  }
+  return best?best.w:nahWand(it.x,it.y,W).w;
+}
+function wandBild(w,o){
+  const W=waende(), H=S.H, L=w.len, rand=8, m=o.klein?4:12, vb=L+2*(m+rand), vh=H+2*(m+rand);
+  const px=Math.max(vb/o.b,vh/o.h), Y=h=>H-h, fs=11.5*px;
+  const linie=(c,sw=1.4)=>`stroke="${c}" stroke-width="${sw}" vector-effect="non-scaling-stroke"`;
+  const box=(a,h0,b,h1,x,rx=0)=>{ const o1=Math.min(h1,H); return `<rect x="${a}" y="${Y(o1)}" width="${Math.max(b-a,0)}" height="${Math.max(o1-h0,0)}" rx="${rx}" ${x}/>`; };
+  const pfad=(d,c,sw)=>`<path d="${d}" fill="none" ${linie(c,sw)}/>`;
+  const namen=[];
+  const name=(a,b,h,txt,c)=>{ if(!o.klein&&b-a>txt.length*fs*.62) namen.push(`<text x="${(a+b)/2}" y="${Y(h)}" font-size="${fs}" font-weight="500" fill="${c}" text-anchor="middle" dominant-baseline="central" paint-order="stroke" stroke="#fff" stroke-width="${3*px}">${esc(txt)}</text>`); };
+  let s=`<rect x="${-rand}" y="${-rand}" width="${L+2*rand}" height="${H+2*rand}" fill="${FARBE.wand}"/><rect x="0" y="0" width="${L}" height="${H}" fill="#F7F3F0"/>`;
+  // Dachschräge: an ihrer Wand als Fläche über dem Knick, an den Nachbarwänden als abgeschnittene Ecke
+  for(const it of S.items.filter(i=>TYP[i.t].zone)){
+    const c=sel===it.id?FARBE.aktiv:FARBE.obj, knie=clamp(it.knie==null?100:it.knie,0,H);
+    if(nahWand(it.x,it.y,W).w.i===w.i){
+      s+=box(0,knie,L,H,`fill="${c}" fill-opacity=".1"`)+pfad(`M0 ${Y(knie)}H${L}`,c,1.6).replace('fill="none"','fill="none" stroke-dasharray="6 4"');
+      name(0,L,(knie+H)/2,'Dachschräge',c);
+      for(const f of S.items.filter(i=>i.t==='dachfenster')){
+        const q=vorWand(f,w), tief=f.rot%180===w.rot%180?f.d:f.w, hg=g=>knie+(H-knie)*clamp(g/it.d,0,1);
+        if(q.g<it.d&&q.a<L&&q.b>0){ const fa=Math.max(q.a,0), fb=Math.min(q.b,L), f0=hg(q.g), f1=hg(q.g+tief); s+=box(fa,f0,fb,f1,`fill="#fff" ${linie(sel===f.id?FARBE.aktiv:FARBE.obj)}`); name(fa,fb,(f0+f1)/2,'Dachfenster',sel===f.id?FARBE.aktiv:FARBE.obj); }
+      }
+    }else{
+      const p=vorWand(it,w);
+      if(p.g>1||(p.a>1&&p.b<L-1)) continue;
+      const pt=p.a<=1?`0,${Y(knie)} ${Math.min(p.b,L)},0 0,0`:`${L},${Y(knie)} ${Math.max(p.a,0)},0 ${L},0`;
+      s+=`<polygon points="${pt}" fill="${c}" fill-opacity=".22" ${linie(c)}/>`;
+    }
+  }
+  // Tür und Fenster sitzen in der Wand
+  for(const it of S.items.filter(i=>(i.t==='tuer'||i.t==='fenster')&&nahWand(i.x,i.y,W).w.i===w.i)){
+    const q=nahWand(it.x,it.y,W), a=clamp(q.s-it.w/2,0,L), b=clamp(q.s+it.w/2,0,L), c=sel===it.id?FARBE.aktiv:FARBE.obj, voll=`fill="#fff" ${linie(c)}`;
+    if(it.t==='tuer'){
+      const o1=Math.min(200,H-2), griff=it.anschlag!=='rechts'?b-9:a+9;
+      s+=box(a,0,b,o1,voll)+box(a+3,0,b-3,o1-3,`fill="none" ${linie(c,1)}`)+pfad(`M${griff-(it.anschlag!=='rechts'?7:-7)} ${Y(105)}H${griff}`,c,2.4);
+      name(a,b,150,'Tür',c);
+    }else{
+      const h0=it.bruestung==null?90:it.bruestung, o1=it.oberkante!=null?Math.max(h0+5,it.oberkante):Math.max(h0+20,Math.min(h0+120,H-10));
+      s+=box(a,h0,b,o1,voll)+pfad(`M${(a+b)/2} ${Y(h0)}V${Y(o1)}`,c,1);
+      name(a,b,(h0+o1)/2,'Fenster',c);
+    }
+  }
+  // Objekte: hintere zuerst, vordere davor
+  const ort=S.items.filter(i=>TYP[i.t].art!=='oeffnung'&&!TYP[i.t].zone&&!TYP[i.t].oben&&!TYP[i.t].punkt&&!TYP[i.t].foto&&i.t!=='strang').map(it=>({it,p:vorWand(it,w)}))
+    .filter(({it,p})=>p.a<L&&p.b>0&&p.g>=-1&&(p.g<=40||(it.id===sel&&wandVon(it,W).i===w.i))).sort((x,y)=>y.p.g-x.p.g);
+  for(const {it,p} of ort){
+    const a=Math.max(p.a,0), b=Math.min(p.b,L), B=b-a, mx=(a+b)/2, c=sel===it.id?FARBE.aktiv:FARBE.obj, voll=`fill="#fff" ${linie(c)}`;
+    const von=it.rot%180===w.rot%180, po=it.aufPodest==='ja'?(it.podest||0):0;
+    if(po) s+=box(a,0,b,po,`fill="${FARBE.raster}" ${linie(c)}`);
+    switch(it.t){
+      case 'wc':
+        if(von) s+=box(mx-B*.42,42,mx+B*.42,82,voll,1.5)+`<path d="M${mx-B*.38} ${Y(32)}Q${mx-B*.34} ${Y(6)} ${mx-B*.18} ${Y(0)}H${mx+B*.18}Q${mx+B*.34} ${Y(6)} ${mx+B*.38} ${Y(32)}Z" ${voll}/>`+box(a,32,b,42,voll,3);
+        else s+=box(a,0,b,42,voll,6);
+        name(a,b,20,'WC',c); break;
+      case 'waschtisch':
+        if(von) s+=pfad(`M${mx} ${Y(62)}V${Y(40)}`,c)+`<path d="M${mx-B*.34} ${Y(78)}Q${mx-B*.28} ${Y(60)} ${mx} ${Y(60)}Q${mx+B*.28} ${Y(60)} ${mx+B*.34} ${Y(78)}Z" ${voll}/>`+box(a,78,b,85,voll,1.5)+pfad(`M${mx} ${Y(85)}V${Y(98)}H${mx+B*.12}`,c,2);
+        else s+=box(a,78,b,85,voll,1.5);
+        name(a,b,108,'Waschtisch',c); break;
+      case 'dusche':
+        s+=box(a,po,b,po+200,`fill="#fff" fill-opacity=".4" stroke-dasharray="6 4" ${linie(c)}`)+box(a,po,b,po+6,voll);
+        if(von) s+=pfad(`M${mx} ${Y(po+100)}V${Y(po+200)}H${mx+10}`,c,1.8)+`<ellipse cx="${mx+10}" cy="${Y(po+197)}" rx="9" ry="3" fill="${c}"/>`;
+        name(a,b,po+70,'Dusche',c); break;
+      case 'wanne':
+        s+=box(a,po,b,po+58,voll,3)+pfad(`M${a} ${Y(po+50)}H${b}`,c,1);
+        name(a,b,po+25,it.aufPodest==='ja'?'Wanne · Podest':'Wanne',c); break;
+      case 'heizung':
+        s+=box(a,15,b,75,voll);
+        if(von) for(let x=a+8;x<b;x+=8) s+=pfad(`M${x} ${Y(15)}V${Y(75)}`,c,.8);
+        break;
+      case 'waschmaschine':
+        s+=box(a,0,b,85,voll,2)+pfad(`M${a} ${Y(72)}H${b}`,c,1);
+        if(von) s+=`<circle cx="${mx}" cy="${Y(38)}" r="${B*.28}" fill="#fff" ${linie(c)}/>`;
+        break;
+      case 'schrank':
+        s+=box(a,0,b,190,voll);
+        if(von&&B>=70) s+=pfad(`M${mx} ${Y(0)}V${Y(Math.min(190,H))}`,c,1);
+        name(a,b,120,'Schrank',c); break;
+      case 'fallrohr': s+=box(a,0,b,H,`fill="${c}" fill-opacity=".18" ${linie(c)}`); break;
+      case 'vorwand': s+=box(a,0,b,it.hoehe==null?120:it.hoehe,`fill="${FARBE.raster}" ${linie(c)}`); name(a,b,(it.hoehe==null?120:it.hoehe)/2,'Vorwand',c); break;
+      case 'therme': { const h0=it.hoehe==null?140:it.hoehe; s+=box(a,h0,b,h0+80,voll,2); name(a,b,h0+40,it.geraet&&it.geraet!=='unklar'?GERAET[it.geraet]:'Therme',c); break; }
+      case 'lueftschacht': s+=box(a,0,b,H,`fill="${c}" fill-opacity=".1" ${linie(c)}`); name(a,b,120,'Lüftungsschacht',c); break;
+      case 'schacht': s+=box(a,0,b,H,`fill="${c}" fill-opacity=".14" ${linie(c)}`); name(a,b,120,'Schacht',c); break;
+      case 'revision': { const h0=it.hoehe==null?20:it.hoehe; s+=box(a,h0,b,h0+30,voll)+pfad(`M${a} ${Y(h0)}L${b} ${Y(h0+30)}`,c,1); break; }
+      case 'wand': {
+        const art=it.wandArt||'decke', o1=art==='halb'?(it.hoehe==null?110:it.hoehe):art==='glas'?200:H;
+        s+=box(a,0,b,o1,art==='glas'?`fill="#fff" fill-opacity=".4" stroke-dasharray="6 4" ${linie(c)}`:`fill="${FARBE.raster}" ${linie(c)}`);
+        name(a,b,Math.min(o1,H)/2,'Zwischenwand',c); break;
+      }
+      default: s+=box(a,0,b,80,voll,2); name(a,b,40,it.text||TYP[it.t].name,c);
+    }
+  }
+  // Nischen vor allem anderen sichtbar, auch wenn sie in einer Vorwand sitzen
+  for(const it of S.items.filter(i=>i.t==='nische'&&nahWand(i.x,i.y,W).w.i===w.i)){
+    const q=nahWand(it.x,it.y,W), c=sel===it.id?FARBE.aktiv:FARBE.obj, a=clamp(q.s-it.w/2,0,L), b=clamp(q.s+it.w/2,0,L), h0=it.hoehe==null?100:it.hoehe, h1=h0+(it.nh==null?60:it.nh);
+    s+=box(a,h0,b,h1,`fill="${FARBE.raster}" ${linie(c)}`); name(a,b,(h0+h1)/2,'Nische',c);
+  }
+  // Anschlüsse und Schalter obenauf; ohne Eingabe auf üblicher Höhe
+  const PUNKT={ausgang:30,abfluss:45,warm:55,kalt:55,ventil:50,schalter:105,steckdose:110,luefter:200};
+  for(const it of S.items.filter(i=>PUNKT[i.t]!=null)){
+    const T=TYP[it.t], zeichen=T.punkt||T.wandpunkt, c=sel===it.id?FARBE.aktiv:FARBE.obj;
+    if((it.t==='abfluss'&&it.ort!=='wand')||(it.t==='ausgang'&&S.abwasser.raus==='boden')||it.seite==='aussen') continue;
+    let x;
+    if(T.art==='oeffnung'){ const q=nahWand(it.x,it.y,W); if(q.w.i!==w.i) continue; x=q.s; }
+    else { const p=vorWand(it,w); if(p.g<-1||p.a>=L||p.b<=0||(p.g>20&&!(it.id===sel&&wandVon(it,W).i===w.i))) continue; x=(p.a+p.b)/2; }
+    const h=Math.min((it.t==='ausgang'?S.abwasser.hoehe:it.hoehe)??PUNKT[it.t],H), r=(o.klein?5:10)*px;
+    s+=`<circle cx="${x}" cy="${Y(h)}" r="${r}" fill="#fff" ${linie(c)}/>`;
+    if(!o.klein) s+=`<text x="${x}" y="${Y(h)}" font-size="${(zeichen.length>1?9:11)*px}" font-weight="700" fill="${c}" text-anchor="middle" dominant-baseline="central">${zeichen}</text>`;
+  }
+  return `<svg class="wandbild" role="img" aria-label="Ansicht von Wand ${wandBuchstaben(W)[w.i]}" viewBox="${-m-rand} ${-m-rand} ${vb} ${vh}" font-family="Poppins,system-ui,sans-serif">${s}${namen.join('')}</svg>`;
+}
+function wandInhalt(b,h){
+  const W=waende(), w=W[wandI];
+  return `<div class="wand-kopf"><button type="button" data-wand="-1" aria-label="Wand davor">‹</button><strong>Wand ${wandBuchstaben(W)[w.i]} · ${r1(w.len)} cm</strong><button type="button" data-wand="1" aria-label="Nächste Wand">›</button></div>`+
+    wandBild(w,{b,h})+`<p class="wand-hinweis">Ungefähre Ansicht. Die Höhen sind Richtwerte.</p>`;
+}
+function maleWand(){
+  const W=waende(), a=S.items.find(i=>i.id===sel&&i.t!=='fotopunkt');
+  if(a&&(a.id!==wandFuer||(drag&&drag.moved&&(drag.it===a||drag.griff)))) wandI=wandVon(a,W).i;
+  wandFuer=a?a.id:null;
+  if(wandI>=W.length) wandI=0;
+  if(dauerhaft()){ const q=wrap('wand-seite'); q.innerHTML=wandInhalt(Math.max(q.clientWidth-24,120),Math.max(q.clientHeight-120,120)); }
+  const g=wrap('wand-gross');
+  if(g.open) wrap('wand-gross-inhalt').innerHTML=wandInhalt(Math.max(g.clientWidth-24,240),Math.min(innerHeight*.58,460));
+}
+/* Handy: nach dem Absetzen kurz eine kleine Karte in der freien Ecke. */
+function versteckeKarte(){ clearTimeout(wandUhr); wrap('wand-karte').classList.remove('an'); }
+function zeigeKarte(it){
+  if(dauerhaft()) return;
+  const W=waende(), w=wandVon(it,W), kt=wrap('wand-karte'), r=wrap('plan-box').getBoundingClientRect(), m=wrap('plan').getScreenCTM();
+  wandI=w.i;
+  kt.innerHTML=`<span>So sieht Wand ${wandBuchstaben(W)[w.i]} aus</span>`+wandBild(w,{b:160,h:96,klein:true});
+  kt.classList.toggle('rechts',m.a*it.x+m.e<r.left+r.width/2);
+  kt.classList.toggle('unten',m.d*it.y+m.f<r.top+r.height/2);
+  kt.classList.add('an');
+  clearTimeout(wandUhr); wandUhr=setTimeout(versteckeKarte,3500);
+}
+function wandGrossAuf(){ versteckeKarte(); wrap('wand-gross').showModal(); maleWand(); }
+wrap('b-ansicht').addEventListener('click',wandGrossAuf);
+wrap('wand-karte').addEventListener('click',wandGrossAuf);
+wrap('wand-zu').addEventListener('click',()=>wrap('wand-gross').close());
+wrap('wand-gross').addEventListener('click',e=>{ if(e.target===wrap('wand-gross')) wrap('wand-gross').close(); });
+document.addEventListener('click',e=>{
+  const k=e.target.closest('[data-wand]'); if(!k) return;
+  const n=waende().length; wandI=(wandI+Number(k.dataset.wand)+n)%n; maleWand();
+});
+
+/* ---------- Ziehen mit Maus und Finger ---------- */
+const plan=wrap('plan');
+function zuCm(e){ const m=plan.getScreenCTM().inverse(); const p=new DOMPoint(e.clientX,e.clientY).matrixTransform(m); return {x:p.x,y:p.y}; }
+plan.addEventListener('pointerdown',e=>{
+  versteckeKarte();
+  const griff=e.target.closest('[data-griff]'), objekt=e.target.closest('[data-id]');
+  if(griff){
+    merke(); drag={griff:griff.dataset.griff, moved:true}; plan.setPointerCapture(e.pointerId); e.preventDefault(); return;
+  }
+  if(!objekt){ if(sel){ sel=null; zeigeInhalt(); maleplan(); } return; }
+  const it=S.items.find(i=>i.id===objekt.dataset.id); if(!it) return;
+  const p=zuCm(e);
+  const warAnders=sel!==it.id; sel=it.id; if(warAnders) masseOffen=false;
+  drag={it,dx:it.x-p.x,dy:it.y-p.y,sx:e.clientX,sy:e.clientY,moved:false,warAnders};
+  plan.setPointerCapture(e.pointerId); e.preventDefault();
+  zeigeInhalt(); maleplan();
+});
+plan.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  const p=zuCm(e);
+  if(drag.griff&&drag.griff[0]==='E'){
+    const it=S.items.find(i=>i.id===sel); if(!it) return;
+    const q=it.rot%180!==0, sg=Number(drag.griff.slice(1)), W=waende(), fang=Math.max(8,14/ansicht.sc);
+    const fest=(q?it.y:it.x)-sg*it.w/2;
+    let ende=r5(q?p.y:p.x);
+    for(const w of W){
+      if(q&&w.dx!==0&&it.x>=Math.min(w.a[0],w.b[0])&&it.x<=Math.max(w.a[0],w.b[0])&&Math.abs((q?p.y:p.x)-w.a[1])<fang) ende=w.a[1];
+      if(!q&&w.dy!==0&&it.y>=Math.min(w.a[1],w.b[1])&&it.y<=Math.max(w.a[1],w.b[1])&&Math.abs((q?p.y:p.x)-w.a[0])<fang) ende=w.a[0];
+    }
+    ende=clamp(ende,0,q?S.B:S.L);
+    if((ende-fest)*sg<20) ende=fest+sg*20;
+    it.w=Math.abs(ende-fest);
+    if(q) it.y=(ende+fest)/2; else it.x=(ende+fest)/2;
+    maleplan(); return;
+  }
+  if(drag.griff){
+    const c=aussparung();
+    if(drag.griff==='L') S.L=clamp(r5(p.x),Math.max(80,c?S.aw+40:80),1500);
+    else S.B=clamp(r5(p.y),Math.max(80,c?S.at+40:80),1500);
+    normalisieren(); maleplan(); return;
+  }
+  if(!drag.moved){ if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<4) return; merke(); drag.moved=true; }
+  const fang=Math.max(10,16/ansicht.sc), it=drag.it, x=p.x+drag.dx, y=p.y+drag.dy;
+  if(TYP[it.t].art==='oeffnung') setzeOeffnung(it,p.x,p.y,true);
+  else if(TYP[it.t].zone) zieheZone(it,p.x,p.y);
+  else setzeObjekt(it,x,y,fang,true);
+  maleplan();
+});
+/* Dachschräge: bleibt immer an einer Wand und wechselt zu der Wand, die dem Finger am nächsten ist. */
+function zieheZone(it,x,y){
+  const W=waende(), k=kiste(it);
+  if(x>=k.x0&&x<=k.x1&&y>=k.y0&&y<=k.y1) return;
+  const jetzt=nahWand(it.x,it.y,W).w, neu=nahWand(x,y,W), alt=nahWand(x,y,[jetzt]);
+  if(neu.w===jetzt||neu.d>alt.d-15) return;
+  const w=neu.w;
+  it.rot=w.rot; it.w=w.len;
+  it.x=w.a[0]+w.dx*w.len/2+w.nx*it.d/2; it.y=w.a[1]+w.dy*w.len/2+w.ny*it.d/2;
+  haltImRaum(it);
+}
+function zugEnde(){
+  if(!drag) return;
+  const m=drag.moved, it=drag.it||(drag.griff&&drag.griff[0]==='E'?S.items.find(i=>i.id===sel):null);
+  drag=null; if(m){ speichere(); zeigeInhalt(); } ansicht=null; maleplan();
+  if(m&&it&&it.t!=='fotopunkt') zeigeKarte(it);
+}
+plan.addEventListener('pointerup',zugEnde);
+plan.addEventListener('pointercancel',zugEnde);
+new ResizeObserver(()=>{ if(!drag){ ansicht=null; maleplan(); } }).observe(wrap('plan-box'));
+
+/* ---------- Geführter Ablauf: eine Frage pro Bildschirm ---------- */
+const HEIZARTEN = [['hk','Heizkörper'],['fbhWasser','Fußbodenheizung mit Wasser'],['fbhElektro','Elektrische Fußbodenheizung'],['keine','Keine Heizung'],['unklar','Weiß ich nicht']];
+const PHASEN = ['Raum','Objekte','Leitungen','Strom','Fotos','Schicken'];
+const WEISS_NICHT = KURZ ? 'Weißt du es nicht? Überspring es einfach.' : 'Weißt du es nicht? Überspring es einfach, das klären wir im Gespräch.';
+const KURZ_IDS = ['masse','form','tuer','fenster','schraege','wand','vorwand','wc','waschtisch','dusche','wanne','fallrohr','schacht'];
+const LEAD_WANN = [['bald','In den nächsten 3 Monaten'],['jahr','In 3 bis 12 Monaten'],['spaeter','Später oder weiß noch nicht']];
+/* Kurzfassung: 3 Fragen zum Bedarf, damit die kostenlose Skizze passt (Corey: erst den Raum und die Bedürfnisse prüfen, dann zeichnen). */
+const BEDARF = {
+  wer:{frage:'Wer nutzt das Badezimmer?', mehr:true, wahl:[['allein','Ich allein'],['zwei','Zu zweit'],['kinder','Mit Kindern'],['aeltere','Ältere Menschen'],['gaeste','Vor allem Gäste']]},
+  wanne:{frage:'Badewanne oder Dusche?', wahl:[['wanne','Badewanne muss bleiben'],['dusche','Dusche reicht'],['beides','Beides, wenn es passt']]},
+  nervt:{frage:'Was nervt dich heute am meisten?', mehr:true, wahl:[['eng','Zu eng'],['stauraum','Zu wenig Stauraum'],['dusche','Dusche zu klein'],['dunkel','Zu dunkel'],['wc','Man sieht sofort das WC'],['alt','Alles alt']]}
+};
+const bedarfText=f=>{ const q=BEDARF[f], w=[].concat((S.bedarf||{})[f]||[]); return w.map(k=>(q.wahl.find(([x])=>x===k)||[,k])[1]).join(', '); };
+const FRAGEN = [
+  {id:'masse', ph:0, art:'masse', griffe:true},
+  {id:'form', ph:0, art:'form', griffe:true},
+  {id:'tuer', ph:0, typen:['tuer'], immer:true, frage:'Wo ist die Tür?', hilfe:'Zieh sie auf die richtige Wand. Der gestrichelte Bogen zeigt, wie sie aufgeht.'},
+  {id:'fenster', ph:0, typen:['fenster'], mehrfach:true, frage:'Gibt es ein Fenster?', hilfe:'Zieh es auf die richtige Wand.'},
+  {id:'schraege', ph:0, typen:['schraege'], frage:'Gibt es eine Dachschräge?', hilfe:'Zieh sie an die Wand, an der die Schräge ist.'},
+  {id:'dachfenster', ph:0, typen:['dachfenster'], mehrfach:true, frage:'Gibt es ein Dachfenster?', hilfe:'Zieh es dorthin, wo es von oben gesehen sitzt.'},
+  {id:'wand', ph:0, typen:['wand'], mehrfach:true, frage:'Gibt es eine Zwischen- oder Trennwand?', hilfe:'Zum Beispiel neben der Toilette oder eine Glaswand an der Dusche. Die blauen Griffe ändern die Länge.'},
+  {id:'vorwand', ph:0, typen:['vorwand'], mehrfach:true, frage:'Gibt es eine Vorwand?', hilfe:'Eine vorgesetzte Wand, oft hinter Toilette oder Waschbecken. Darin laufen meist die Rohre.'},
+  {id:'nische', ph:0, typen:['nische'], mehrfach:true, frage:'Gibt es eine Nische?', hilfe:'Zum Beispiel für Duschgel in der Dusche. Zieh sie auf die richtige Wand.'},
+  {id:'gebaeude', ph:0, art:'gebaeude'},
+  {id:'wc', ph:1, typen:['wc'], immer:true, frage:'Wo steht die Toilette?', hilfe:'Zieh sie an die richtige Stelle.'},
+  {id:'waschtisch', ph:1, typen:['waschtisch'], immer:true, mehrfach:true, frage:'Wo ist das Waschbecken?', hilfe:'Zieh es an die richtige Stelle.'},
+  {id:'dusche', ph:1, typen:['dusche'], frage:'Gibt es eine Dusche?', hilfe:'Zieh sie an die richtige Stelle.'},
+  {id:'wanne', ph:1, typen:['wanne'], frage:'Gibt es eine Badewanne?', hilfe:'Zieh sie an die richtige Stelle. „Drehen“ dreht sie um 90 Grad.'},
+  {id:'heizung', ph:1, typen:['heizung'], mehrfach:true, frage:'Wie wird dein Badezimmer beheizt?', hilfe:'Mehreres geht auch.'},
+  {id:'therme', ph:1, typen:['therme'], mehrfach:true, frage:'Hängt im Bad eine Therme oder ein Boiler?', hilfe:'Zieh das Gerät an die richtige Wand.'},
+  {id:'waschmaschine', ph:1, typen:['waschmaschine'], frage:'Steht hier eine Waschmaschine?', hilfe:'Zieh sie an die richtige Stelle.'},
+  {id:'schrank', ph:1, typen:['schrank'], mehrfach:true, frage:'Gibt es einen Schrank?', hilfe:'Zieh ihn an die richtige Stelle.'},
+  {id:'sonstiges', ph:1, typen:['sonstiges'], mehrfach:true, frage:'Steht sonst noch etwas im Raum?', hilfe:'Zum Beispiel ein Bidet oder ein Regal.'},
+  {id:'fallrohr', ph:2, typen:['fallrohr'], frage:'Wo läuft das dicke Abwasserrohr?', hilfe:'Das Fallrohr sitzt oft hinter der Toilette oder in einem Kasten. '+WEISS_NICHT},
+  {id:'strang', ph:2, typen:['strang'], mehrfach:true, frage:'Wo läuft die Abwasserleitung?', hilfe:'Zieh sie vom Abfluss bis zum dicken Rohr. Die blauen Griffe ändern die Länge. Macht sie eine Ecke, nimm ein zweites Stück. '+WEISS_NICHT},
+  {id:'raus', ph:2, art:'raus'},
+  {id:'schacht', ph:2, typen:['schacht'], mehrfach:true, frage:'Gibt es einen Schacht oder Kasten?', hilfe:'Alles, was aus der Wand ragt und nicht wegkann. '+WEISS_NICHT},
+  {id:'abfluss', ph:2, typen:['abfluss'], mehrfach:true, frage:'Wo sind Abflüsse?', hilfe:'Im Boden oder in der Wand. '+WEISS_NICHT},
+  {id:'wasser', ph:2, typen:['warm','kalt'], mehrfach:true, frage:'Wo kommt das Wasser raus?', hilfe:'Warm und kalt getrennt einzeichnen. '+WEISS_NICHT},
+  {id:'ventil', ph:2, typen:['ventil'], mehrfach:true, frage:'Wo sind die Absperrventile?', hilfe:'Damit stellt man das Wasser ab. '+WEISS_NICHT},
+  {id:'revision', ph:2, typen:['revision'], mehrfach:true, frage:'Gibt es eine Revisionsklappe?', hilfe:'Eine kleine Klappe in Wand oder Fliesen, oft an Wanne oder Schacht. '+WEISS_NICHT},
+  {id:'schalter', ph:3, typen:['schalter'], immer:true, mehrfach:true, frage:'Wo ist der Lichtschalter?', hilfe:'Sag mir auch, ob er drinnen oder draußen im Flur sitzt.'},
+  {id:'steckdose', ph:3, typen:['steckdose'], mehrfach:true, frage:'Wo sind Steckdosen?', hilfe:'Jede Stelle einmal einzeichnen.'},
+  {id:'luefter', ph:3, typen:['luefter'], frage:'Gibt es einen Lüfter?', hilfe:'Zieh ihn auf die richtige Wand.'},
+  {id:'lueftung', ph:3, typen:['lueftrohr','lueftschacht'], mehrfach:true, frage:'Wohin geht die Abluft?', hilfe:'Zeichne das Rohr vom Lüfter bis nach draußen oder den Lüftungsschacht ein. Die blauen Griffe ändern die Länge. '+WEISS_NICHT},
+];
+function akt(){ const l=schritte(); schritt=clamp(schritt,0,l.length-1); return l[schritt]; }
+function schritte(){
+  if(KURZ){
+    const fo=ecken().slice(0,3);
+    return [...FRAGEN.filter(f=>KURZ_IDS.includes(f.id)),
+      ...fo.map((e,n)=>({id:e.key,ph:4,art:'foto',fotoKey:e.key,ecke:e,nr:n+1,von:fo.length})),{id:'bedarf',ph:5,art:'bedarf'},{id:'lead',ph:5,art:'lead'},{id:'senden',ph:5,art:'senden'}];
+  }
+  const l=FRAGEN.slice();
+  // Je Wand eine Frage: außen oder innen, woraus. Steht hinter den Raum-Fragen, weil die Tür die Buchstaben festlegt.
+  l.splice(l.findIndex(f=>f.id==='nische')+1,0,...waende().map(w=>({id:'wandinfo'+w.i, ph:0, art:'wandinfo', wi:w.i})));
+  ecken().forEach((e,n,alle)=>l.push({id:e.key, ph:4, art:'foto', fotoKey:e.key, ecke:e, nr:n+1, von:alle.length}));
+  l.push({id:'fotoExtra', ph:4, art:'fotoExtra'});
+  l.push({id:'senden', ph:5, art:'senden'});
+  return l;
+}
+function geheZu(i){
+  const l=schritte();
+  schritt=clamp(i,0,l.length-1); sel=null; masseOffen=false;
+  const s=l[schritt];
+  if(s.typen){
+    const da=S.items.filter(x=>s.typen.includes(x.t));
+    if(da.length) sel=da[da.length-1].id;
+    else if(s.immer&&S.antw[s.id]!=='nein'){ const n=neuesObjekt(s.typen[0]); S.items.push(n); sel=n.id; }
+  }
+  speichere(); zeigeInhalt(); ansicht=null; maleplan();
+  wrap('inhalt').scrollTop=0;
+}
+
+/* ---------- Fotos: bleiben auf dem Gerät, gehen nur per Teilen raus ---------- */
+const FOTOS=new Map();
+let fotoDb=null, fotoWartet=null, gesendet=false, masseOffen=false;
+function dbOeffnen(){ return new Promise((ok)=>{ try{ const q=indexedDB.open('grundriss-fotos',1); q.onupgradeneeded=()=>q.result.createObjectStore('f'); q.onsuccess=()=>ok(q.result); q.onerror=()=>ok(null); }catch(e){ ok(null); } }); }
+async function fotosLaden(){
+  fotoDb=await dbOeffnen(); if(!fotoDb) return;
+  try{ const st=fotoDb.transaction('f').objectStore('f'); const k=st.getAllKeys(), v=st.getAll();
+    await new Promise(r=>{ v.onsuccess=r; v.onerror=r; });
+    (k.result||[]).forEach((key,i)=>FOTOS.set(key,v.result[i])); }catch(e){}
+  zeigeInhalt();
+}
+function fotoSichern(key,blob){ FOTOS.set(key,blob); try{ fotoDb&&fotoDb.transaction('f','readwrite').objectStore('f').put(blob,key); }catch(e){} }
+function fotosLeeren(){ FOTOS.clear(); try{ fotoDb&&fotoDb.transaction('f','readwrite').objectStore('f').clear(); }catch(e){} }
+function bildAus(blob){ return new Promise((ok,no)=>{ const u=URL.createObjectURL(blob), i=new Image(); i.onload=()=>{ ok(i); setTimeout(()=>URL.revokeObjectURL(u),2000); }; i.onerror=no; i.src=u; }); }
+async function fotoVerkleinern(file){
+  const i=await bildAus(file), m=Math.min(1,1800/Math.max(i.naturalWidth,i.naturalHeight));
+  const c=document.createElement('canvas'); c.width=Math.round(i.naturalWidth*m); c.height=Math.round(i.naturalHeight*m);
+  c.getContext('2d').drawImage(i,0,0,c.width,c.height);
+  return new Promise(r=>c.toBlob(r,'image/jpeg',.82));
+}
+async function fotoAufnehmen(ziel,file){
+  let blob; try{ blob=await fotoVerkleinern(file); }catch(e){ melde('Dieses Foto konnte ich nicht öffnen. Versuch ein anderes.'); return; }
+  merke();
+  let key=ziel;
+  if(ziel==='neu'){ const n=neuesObjekt('fotopunkt'); n.x=S.L/2; n.y=S.B/2; haltImRaum(n); S.items.push(n); key=n.id; sel=n.id; }
+  fotoSichern(key,blob); S.fotos[key]=true;
+  speichere(); zeigeInhalt(); ansicht=null; maleplan();
+  if(ziel==='neu') melde('Zieh die Kamera dorthin, von wo du fotografiert hast.');
+}
+wrap('kamera').addEventListener('change',e=>{ const f=e.target.files[0], z=fotoWartet; e.target.value=''; if(f&&z) fotoAufnehmen(z,f); });
+
+/* ---------- Bedienfeld ---------- */
+const stepper=(key,wert,schritt=5,einh='cm')=>`<div class="stepper"><button type="button" data-plus="${key}" data-s="${-schritt}" aria-label="weniger">−</button><input type="number" inputmode="numeric" data-feld="${key}" value="${wert==null?'':r1(wert)}" placeholder="?" aria-label="${key}"><button type="button" data-plus="${key}" data-s="${schritt}" aria-label="mehr">+</button><span>${einh}</span></div>`;
+const reihe=(txt,inner)=>`<div class="reihe"><span>${txt}</span>${inner}</div>`;
+const wahl=(titel,feld,optionen,wert,art='')=>`<div class="block"><p>${titel}</p><div class="wahl ${art}">${optionen.map(([k,t])=>`<button type="button" data-set="${feld}:${k}" aria-pressed="${wert===k}">${t}</button>`).join('')}</div></div>`;
+const BOGEN=(n)=>{ const l=schritte(), s=l[n]; return l.filter(x=>x.ph===s.ph); };
+function zeigeInhalt(){
+  const s=akt();
+  document.querySelector('main').classList.toggle('ohne-plan',s.art==='lead'||s.art==='bedarf');
+  const phDa=new Set(schritte().map(x=>x.ph));
+  wrap('phasen').innerHTML=PHASEN.map((p,i)=>[p,i]).filter(([,i])=>phDa.has(i)).map(([p,i],nr)=>`<button type="button" data-phase="${i}" class="${i<s.ph?'fertig':i===s.ph?'jetzt':''}"${i===s.ph?' aria-current="step"':''}><i>${nr+1}</i>${p}</button>`).join('');
+  wrap('inhalt').innerHTML=inhaltSchritt(s);
+  const l=schritte(), leerOhne=s.typen&&!S.items.some(x=>s.typen.includes(x.t))&&!(s.id==='heizung'&&S.heizung.length);
+  const nebenbei=sel&&s.typen&&!s.typen.includes((S.items.find(x=>x.id===sel)||{}).t);
+  const nebenFoto=sel&&!s.typen;
+  const offenFoto=(s.art==='foto'&&!S.fotos[s.fotoKey])||(s.art==='wandinfo'&&!S.wandInfo[s.wi])||(s.art==='raus'&&!S.abwasser.raus)||(s.art==='gebaeude'&&!S.gebaeude.boden)||(s.art==='bedarf'&&!['wer','wanne','nervt'].some(bedarfText));
+  const zurueckAus=schritt===0, ende=s.art==='senden';
+  wrap('fuss').innerHTML=(nebenbei||nebenFoto)
+    ? `<button class="knopf" type="button" data-fertig>Fertig</button>`
+    : `<button class="knopf zwei" type="button" data-schritt="-1"${zurueckAus?' disabled':''}>Zurück</button>`+
+      (ende?'':`<button class="knopf" type="button" data-schritt="1" data-leer="${leerOhne?1:0}">${leerOhne||offenFoto||(s.art==='lead'&&leadStand()!=='ok')?'Überspringen':'Weiter'}</button>`);
+  wrap('b-zurueck').disabled=!verlauf.length;
+  wrap('inhalt').querySelectorAll('img[data-foto]').forEach(i=>{ const b=FOTOS.get(i.dataset.foto); if(b){ i.src=URL.createObjectURL(b); i.onload=()=>URL.revokeObjectURL(i.src); } });
+}
+function kopf(s,titel,hilfe){
+  const b=BOGEN(schritt), nr=b.findIndex(x=>x.id===s.id)+1;
+  return `<p class="ueber">${PHASEN[s.ph]}${b.length>1?` · Frage ${nr} von ${b.length}`:''}</p><h2>${titel}</h2>${hilfe?`<p class="hinweis">${hilfe}</p>`:''}`;
+}
+function inhaltSchritt(s){
+  const gewaehlt=S.items.find(i=>i.id===sel);
+  if(gewaehlt&&(!s.typen||!s.typen.includes(gewaehlt.t))) return inhaltObjekt(gewaehlt);
+  if(s.art==='lead') return inhaltLead(s);
+  if(s.art==='bedarf') return inhaltBedarf(s);
+  if(s.art==='masse') return inhaltMasse(s);
+  if(s.art==='form') return inhaltForm(s);
+  if(s.art==='wandinfo') return inhaltWand(s);
+  if(s.art==='raus') return inhaltRaus(s);
+  if(s.art==='gebaeude') return inhaltGebaeude(s);
+  if(s.art==='foto') return inhaltFoto(s);
+  if(s.art==='fotoExtra') return inhaltFotoExtra(s);
+  if(s.art==='senden') return inhaltSchicken(s);
+  if(s.id==='heizung') return inhaltHeizung(s);
+  return inhaltFrage(s);
+}
+function plzOk(p){
+  const n=parseInt(p,10);
+  return [[10000,16999],[3000,3999],[1945,1998],[4895,4938],[17268,17337],[19300,19357]].some(([a,b])=>n>=a&&n<=b);
+}
+function leadStand(){
+  const l=S.lead||{};
+  return /^\d{5}$/.test(l.plz||'')&&l.eigen&&l.wann?'ok':'offen';
+}
+function inhaltLead(s){
+  const l=S.lead||{}, st=leadStand(), knoepfe=(feld,liste)=>`<div class="wahl">${liste.map(([k,t])=>`<button type="button" data-lead="${feld}:${k}" aria-pressed="${l[feld]===k}">${t}</button>`).join('')}</div>`;
+  return kopf(s,'Fast geschafft','Noch 3 Angaben, dann schickst du mir deinen Grundriss.')+
+    `<label class="feld">Deine Postleitzahl<input id="f-plz" inputmode="numeric" maxlength="5" autocomplete="postal-code" value="${esc(l.plz||'')}"></label>`+
+    `<div class="block"><p>Gehört dir die Wohnung oder das Haus?</p>${knoepfe('eigen',[['ja','Ja'],['nein','Nein, ich miete']])}</div>`+
+    `<div class="block"><p>Wann soll dein Badezimmer neu werden?</p>${knoepfe('wann',LEAD_WANN)}</div>`+
+    `<p class="hinweis">Deine Angaben bleiben auf deinem Handy, bis du sie mir schickst. <a href="rechtliches.html" target="_blank" rel="noopener" style="color:var(--primary)">Impressum und Datenschutz</a></p>`;
+}
+function inhaltBedarf(s){
+  const b=S.bedarf||{}, reihe=f=>{ const q=BEDARF[f], an=k=>q.mehr?(b[f]||[]).includes(k):b[f]===k;
+    return `<div class="block"><p>${q.frage}${q.mehr?' Mehreres geht.':''}</p><div class="wahl">${q.wahl.map(([k,t])=>`<button type="button" data-bedarf="${f}:${k}" aria-pressed="${an(k)}">${t}</button>`).join('')}</div></div>`; };
+  return kopf(s,'Noch 3 kurze Fragen','Damit meine Skizze zu dir passt.')+reihe('wer')+reihe('wanne')+reihe('nervt');
+}
+function inhaltMasse(s){
+  const v=PARAM.get('v');
+  return kopf(s,`${v?'Hallo '+esc(v)+'! ':''}Wie groß ist dein Badezimmer?`,'Miss so genau, wie du kannst, am besten auf den Zentimeter.')+
+    reihe('Länge',stepper('L',S.L))+reihe('Breite',stepper('B',S.B))+reihe('Raumhöhe',stepper('H',S.H));
+}
+function inhaltForm(s){
+  let h=kopf(s,'Welche Form hat der Raum?','Ragt eine Ecke in den Raum, nimm die L-Form.');
+  h+=`<div class="block"><div class="wahl"><button type="button" data-form="rechteck" aria-pressed="${S.form!=='l'}">Rechteck</button><button type="button" data-form="l" aria-pressed="${S.form==='l'}">Mit Ecke (L-Form)</button></div></div>`;
+  if(S.form==='l'){
+    h+=`<div class="block"><p>Wo fehlt die Ecke?</p><div class="wahl">${[['ol','Oben links'],['or','Oben rechts'],['ul','Unten links'],['ur','Unten rechts']].map(([k,t])=>`<button type="button" data-ecke="${k}" aria-pressed="${S.ecke===k}">${t}</button>`).join('')}</div></div>`;
+    h+=reihe('Ecke breit',stepper('aw',S.aw))+reihe('Ecke tief',stepper('at',S.at));
+  }
+  return h;
+}
+const WAND_LAGE={aussen:'Außenwand',innen:'Innenwand',nachbar:'Nachbarwohnung',unklar:'Weiß nicht'};
+const WAND_STOFF={massiv:'Stein oder Beton',hohl:'Trockenbau',holz:'Holz',unklar:'Weiß nicht'};
+function inhaltWand(s){
+  const W=waende(), name=wandBuchstaben(W)[s.wi], i=S.wandInfo[s.wi]||{};
+  const knoepfe=(feld,liste)=>Object.entries(liste).map(([k,t])=>`<button type="button" data-wandset="${feld}:${k}" aria-pressed="${i[feld]===k}">${t}</button>`).join('');
+  return kopf(s,`Was für eine Wand ist Wand ${name}?`)+
+    `<div class="block"><p>Was ist dahinter? Draußen, ein eigener Raum oder eine fremde Wohnung?</p><div class="wahl halb">${knoepfe('lage',WAND_LAGE)}</div></div>`+
+    `<div class="block"><p>Woraus ist sie? Weißt du es nicht, klopf an mehreren Stellen mit dem Fingerknöchel. <b>Hohl</b> ist meist Trockenbau, <b>dumpf und fest</b> meist Stein oder Beton.</p><div class="wahl halb">${knoepfe('stoff',WAND_STOFF)}</div></div>`;
+}
+const BODEN={beton:'Beton',holz:'Holzbalken',platte:'Bodenplatte',unklar:'Weiß nicht'};
+const DARUNTER={fremd:'Fremde Wohnung',eigen:'Eigener Raum',keller:'Keller',unklar:'Weiß nicht'};
+const DECKE={ja:'Ja',nein:'Nein',unklar:'Weiß nicht'};
+const WARMWASSER={zentral:'Zentral aus dem Haus',therme:'Gastherme',durchlauf:'Durchlauferhitzer',boiler:'Boiler',unklar:'Weiß nicht'};
+function inhaltGebaeude(s){
+  const g=S.gebaeude, knoepfe=(feld,liste)=>`<div class="wahl halb">${Object.entries(liste).map(([k,t])=>`<button type="button" data-bauset="${feld}:${k}" aria-pressed="${g[feld]===k}">${t}</button>`).join('')}</div>`;
+  return kopf(s,'Noch ein paar Fragen zum Haus','Weißt du etwas nicht, nimm „Weiß nicht“. Das klären wir im Gespräch.')+
+    `<div class="block"><p><b>Bodenaufbau:</b> Worauf liegt dein Boden? Im Altbau sind es oft Holzbalken. Federt der Boden beim Auftreten oder klingt er hohl, ist das ein Hinweis darauf. Bodenplatte heißt: Darunter ist direkt die Erde.</p>${knoepfe('boden',BODEN)}</div>`+
+    (g.boden==='platte'?'':`<div class="block"><p>Was ist unter deinem Bad?</p>${knoepfe('darunter',DARUNTER)}</div>`)+
+    `<div class="block"><p>Ist die Decke abgehängt? Also tiefer gehängt als die eigentliche Decke, oft für Spots oder Rohre.</p>${knoepfe('decke',DECKE)}</div>`+
+    `<div class="block"><p>Wie kommt das Material ins Bad?</p>${reihe('Etage (Erdgeschoss = 0)',stepper('etage',g.etage,1,''))}`+
+    (g.etage===0?'':`<div class="wahl abstand-klein">${[['ja','Mit Aufzug'],['nein','Ohne Aufzug']].map(([k,t])=>`<button type="button" data-bauset="aufzug:${k}" aria-pressed="${g.aufzug===k}">${t}</button>`).join('')}</div>`)+`</div>`+
+    `<div class="block"><p>Gibt es an der Tür eine Stufe? Wie viel höher liegt der Boden im Bad als im Flur?</p>${reihe('Stufe (keine = 0)',stepper('stufe',g.stufe,1))}</div>`+
+    `<div class="block"><p>Woher kommt dein Warmwasser?</p>${knoepfe('warmwasser',WARMWASSER)}</div>`;
+}
+function gebaeudeZeilen(){
+  const g=S.gebaeude, z=[], bek=(l,k)=>k&&k!=='unklar'?l[k]:null;
+  z.push('Bodenaufbau: '+(bek(BODEN,g.boden)||'nicht bekannt'));
+  if(g.boden!=='platte'&&bek(DARUNTER,g.darunter)) z.push('Darunter: '+DARUNTER[g.darunter]);
+  if(g.decke==='ja') z.push('Decke: abgehängt'); else if(g.decke==='nein') z.push('Decke: nicht abgehängt');
+  const az=g.aufzug==='ja'?', mit Aufzug':g.aufzug==='nein'?', ohne Aufzug':'';
+  if(g.etage!=null) z.push(g.etage===0?'Etage: Erdgeschoss':g.etage<0?'Etage: Untergeschoss'+az:`Etage: ${g.etage}${az}`);
+  else if(az) z.push('Etage: nicht bekannt'+az);
+  if(g.stufe!=null) z.push(g.stufe===0?'Stufe an der Tür: keine':`Stufe an der Tür: ${r1(g.stufe)} cm`);
+  if(bek(WARMWASSER,g.warmwasser)) z.push('Warmwasser: '+WARMWASSER[g.warmwasser]);
+  return z;
+}
+const RAUS={wand:'In die Wand',boden:'In den Boden',kasten:'In einen Kasten',unklar:'Weiß nicht'};
+function inhaltRaus(s){
+  const a=S.abwasser;
+  return kopf(s,'Wo führt das Schmutzwasser raus?','Das Rohr muss bis dorthin stetig fallen. Damit rechne ich das Gefälle.')+
+    `<div class="block"><div class="wahl halb">${Object.entries(RAUS).map(([k,t])=>`<button type="button" data-awset="${k}" aria-pressed="${a.raus===k}">${t}</button>`).join('')}</div></div>`+
+    (S.items.some(i=>i.t==='ausgang')?`<p class="hinweis abstand">Zieh AW im Plan an die Stelle, wo das Rohr rausgeht.</p>`:`<button class="knopf zwei" type="button" data-neu="ausgang">Stelle im Plan markieren</button>`)+
+    reihe('Rohrmitte ab Boden',stepper('awH',a.hoehe))+
+    `<label class="feld">Weißt du etwas zum Gefälle oder zum Rohr? (freiwillig)<textarea id="f-awnotiz" placeholder="z. B. läuft unter dem Estrich, 2 cm Gefälle auf 1 m">${esc(a.notiz||'')}</textarea></label>`;
+}
+function abwasserText(){
+  const a=S.abwasser, t=[];
+  if(a.raus&&a.raus!=='unklar') t.push(RAUS[a.raus]);
+  if(a.hoehe!=null) t.push(`Rohrmitte ${r1(a.hoehe)} cm ab Boden`);
+  if(a.notiz&&a.notiz.trim()) t.push(a.notiz.trim());
+  return t.length?`Abwasser raus: ${t.join(', ')}`:'Abwasser raus: nicht bekannt';
+}
+/* Rohrweg entlang der Wände bis zum Ausgang, sonst zum Fallrohr. 1 bis 2 % sind ein Richtwert, der Betrieb prüft. */
+function gefaelleZeilen(){
+  const z=S.items.find(i=>i.t==='ausgang')||S.items.find(i=>i.t==='fallrohr'); if(!z) return [];
+  const h=S.abwasser.hoehe, nach=z.t==='ausgang'?'Ausgang':'Fallrohr';
+  return S.items.filter(i=>i.t==='wc'||i.t==='abfluss').map(i=>{
+    const weg=Math.abs(i.x-z.x)+Math.abs(i.y-z.y), v=Math.ceil(weg*.01), b=Math.ceil(weg*.02);
+    return `Rohrweg ${TYP[i.t].name} bis ${nach} ca. ${r1(weg)} cm, bei 1 bis 2 % Gefälle ${v} bis ${b} cm Höhenunterschied`+(h==null?'':`, am ${TYP[i.t].name} Rohrmitte ${r1(h+v)} bis ${r1(h+b)} cm ab Boden`);
+  });
+}
+function wandText(w,b){
+  const i=S.wandInfo[w.i]||{}, teile=[WAND_LAGE[i.lage],WAND_STOFF[i.stoff]].filter((t,n)=>t&&t!=='Weiß nicht');
+  return `Wand ${b[w.i]}: ${teile.length?teile.join(', '):'nicht bekannt'}`;
+}
+function inhaltFrage(s){
+  const da=S.items.filter(x=>s.typen.includes(x.t));
+  const hinzu=(t,txt)=>`<button class="knopf hinzu" type="button" data-neu="${t}">${iconSvg(t)}<span>${txt}</span></button>`;
+  if(!da.length){
+    const mehrere=s.typen.length>1;
+    return kopf(s,s.frage,s.hilfe)+(S.antw[s.id]==='nein'?`<p class="hinweis"><b>Gibt es nicht</b>, hast du gesagt. Stimmt das nicht mehr?</p>`:'')+
+      s.typen.map(t=>hinzu(t,mehrere?TYP[t].name+' einzeichnen':'Ja, einzeichnen')).join('');
+  }
+  if(!sel||!da.some(x=>x.id===sel)) sel=da[da.length-1].id;
+  const it=da.find(x=>x.id===sel);
+  let h=kopf(s,s.frage,s.hilfe);
+  if(da.length>1) h+=`<div class="wahl klein">${da.map((x,n)=>`<button type="button" data-waehle="${x.id}" aria-pressed="${x.id===sel}">${esc(TYP[x.t].name.split(' ')[0])} ${n+1}</button>`).join('')}</div>`;
+  h+=felder(it);
+  h+=`<div class="zweier">`;
+  if(s.mehrfach) s.typen.forEach(t=>{ h+=`<button class="knopf zwei" type="button" data-neu="${t}">${s.typen.length>1?'+ '+TYP[t].name:'Noch eins'}</button>`; });
+  if(TYP[it.t].art!=='oeffnung'&&it.t!=='fallrohr'&&!TYP[it.t].zone&&!TYP[it.t].punkt) h+=`<button class="knopf zwei" type="button" data-drehen>Drehen</button>`;
+  h+=`<button class="knopf zwei" type="button" data-loeschen>${s.immer&&da.length===1?'Gibt es nicht':'Entfernen'}</button></div>`;
+  return h;
+}
+function inhaltHeizung(s){
+  let h=kopf(s,s.frage,s.hilfe)+`<div class="wahl spalte">${HEIZARTEN.map(([k,t])=>`<button type="button" data-heiz="${k}" aria-pressed="${S.heizung.includes(k)}">${t}</button>`).join('')}</div>`;
+  const da=S.items.filter(x=>x.t==='heizung');
+  if(!da.length) return h;
+  if(!sel||!da.some(x=>x.id===sel)) sel=da[da.length-1].id;
+  h+=`<p class="hinweis abstand">Zieh den Heizkörper an die richtige Wand.</p>`;
+  if(da.length>1) h+=`<div class="wahl klein">${da.map((x,n)=>`<button type="button" data-waehle="${x.id}" aria-pressed="${x.id===sel}">Heizkörper ${n+1}</button>`).join('')}</div>`;
+  return h+felder(da.find(x=>x.id===sel))+`<div class="zweier"><button class="knopf zwei" type="button" data-neu="heizung">Noch einer</button><button class="knopf zwei" type="button" data-drehen>Drehen</button></div>`;
+}
+function inhaltObjekt(it){
+  const T=TYP[it.t]; let h=`<h2>${esc(T.name)}</h2>`+felder(it)+`<div class="zweier">`;
+  if(T.art!=='oeffnung'&&it.t!=='fallrohr'&&!T.zone&&!T.punkt&&!T.foto) h+=`<button class="knopf zwei" type="button" data-drehen>Drehen</button>`;
+  return h+`<button class="knopf zwei" type="button" data-loeschen>Entfernen</button></div>`;
+}
+const klappe=(zeilen)=>masseOffen?zeilen:`<button class="knopf leise" type="button" data-masse>Maße genauer eingeben</button>`;
+function felder(it){
+  const T=TYP[it.t]; let h='';
+  if(T.foto){
+    h+=`<img class="foto-gross" data-foto="${it.id}" alt="Dein Foto"><p class="hinweis">Zieh die Kamera dorthin, von wo du fotografiert hast.</p>`;
+    h+=`<label class="feld">Was ist drauf?<input data-text="text" value="${esc(it.text||'')}" placeholder="z. B. Ventile unter dem Waschbecken"></label>`;
+    return h;
+  }
+  if(T.art==='oeffnung'){
+    const W=waende(),n=nahWand(it.x,it.y,W),b=wandBuchstaben(W)[n.w.i];
+    h+=`<p class="sitzt">Sitzt an Wand ${b}</p>`;
+    let genau='';
+    if(it.t==='tuer'){
+      h+=wahl('Tür geht auf','auf',[['innen','Nach innen'],['aussen','Nach außen']],it.auf==='aussen'?'aussen':'innen');
+      h+=wahl('Scharnier (vom Raum aus gesehen)','anschlag',[['links','Links'],['rechts','Rechts']],it.anschlag==='rechts'?'rechts':'links');
+      genau+=reihe('Breite',stepper('w',it.w));
+    }
+    if(it.t==='fenster') genau+=reihe('Breite',stepper('w',it.w))+reihe('Unterkante ab Boden',stepper('bruestung',it.bruestung))+reihe('Oberkante ab Boden',stepper('oberkante',it.oberkante));
+    if(it.t==='nische'){
+      h+=wahl('Worin sitzt sie?','sitzt',[['wand','In der Wand'],['vorwand','In der Vorwand']],it.sitzt==='vorwand'?'vorwand':'wand');
+      h+=reihe('Breite',stepper('w',it.w))+reihe('Höhe',stepper('nh',it.nh))+reihe('Tiefe',stepper('d',it.d,1))+reihe('Höhe ab Boden',stepper('hoehe',it.hoehe));
+    }
+    if(it.t==='schalter') h+=wahl('Wo sitzt er?','seite',[['innen','Im Badezimmer'],['aussen','Draußen im Flur']],it.seite==='aussen'?'aussen':'innen');
+    if(T.wandpunkt) genau+=reihe('Höhe ab Boden',stepper('hoehe',it.hoehe));
+    genau+=reihe('Abstand von links',stepper('abstand',n.s-it.w/2));
+    return h+klappe(genau);
+  }
+  const k=kiste(it), W=waende();
+  if(T.zone) return h+reihe('Reicht in den Raum',stepper('d',it.d))+reihe('Höhe an der Wand',stepper('knie',it.knie));
+  if(it.t==='sonstiges') h+=`<label class="feld">Was ist das?<input data-text="text" value="${esc(it.text||'')}" placeholder="z. B. Bidet"></label>`;
+  if(it.t==='abfluss') h+=wahl('Wo sitzt er?','ort',[['boden','Im Boden'],['wand','In der Wand']],it.ort||'boden');
+  if(it.t==='ventil') h+=wahl('Was für ein Ventil?','ventilArt',[['eck','Eckventil'],['haupt','Haupthahn'],['unklar','Weiß nicht']],it.ventilArt||'unklar');
+  if(it.t==='wanne'){
+    h+=wahl('Was für eine Wanne?','form',[['normal','Normale Wanne'],['eck','Eckwanne']],it.form==='eck'?'eck':'normal');
+    if(it.form==='eck') h+=`<p class="hinweis abstand">Zieh sie in die Ecke. „Drehen“ dreht sie passend.</p>`;
+  }
+  if(it.t==='vorwand') h+=reihe('Breite',stepper('w',it.w))+reihe('Tiefe',stepper('d',it.d))+reihe('Höhe',stepper('hoehe',it.hoehe));
+  if(it.t==='dusche'||it.t==='wanne'){
+    h+=wahl('Steht sie auf einem Podest?','aufPodest',[['nein','Nein'],['ja','Ja']],it.aufPodest==='ja'?'ja':'nein');
+    if(it.aufPodest==='ja') h+=reihe('Podest hoch',stepper('podest',it.podest));
+  }
+  if(it.t==='therme') h+=wahl('Was ist es?','geraet',Object.entries(GERAET).map(([k,t])=>[k,k==='unklar'?'Weiß nicht':t]),it.geraet||'unklar','halb');
+  if(it.t==='strang'||it.t==='lueftrohr') return h+reihe('Länge',stepper('w',it.w));
+  if(it.t==='wand'){
+    h+=wahl('Was für eine Wand?','wandArt',[['decke','Bis zur Decke'],['halb','Halbhoch'],['glas','Glas']],it.wandArt||'decke');
+    if(it.wandArt==='halb') h+=reihe('Wand hoch',stepper('hoehe',it.hoehe));
+    if(it.wandArt!=='glas') h+=`<div class="block"><p>Wie dick ist die Wand?</p>${reihe('Dicke',stepper('d',it.d,1))}<p class="hinweis">Miss an der Stirnseite oder an einer Türöffnung. Weißt du es nicht, lass den Wert stehen.</p></div>`;
+    const li=strahl(k.x0,(k.y0+k.y1)/2,-1,0,W), ob=strahl((k.x0+k.x1)/2,k.y0,0,-1,W);
+    return h+klappe(reihe('Länge',stepper('w',it.w))+(it.wandArt==='glas'?reihe('Dicke',stepper('d',it.d,1)):'')+(li?reihe('Abstand links',stepper('abL',li.d,1)):'')+(ob?reihe('Abstand oben',stepper('abO',ob.d,1)):''));
+  }
+  let genau='';
+  if(T.mitHoehe&&(it.t!=='abfluss'||it.ort==='wand')) genau+=reihe('Höhe ab Boden',stepper('hoehe',it.hoehe));
+  if(!T.punkt&&!SANITAER.includes(it.t)&&it.t!=='vorwand'){
+    genau+=reihe(it.t==='fallrohr'?'Durchmesser':'Breite',stepper('w',it.w));
+    if(it.t!=='fallrohr'&&it.t!=='revision') genau+=reihe('Tiefe',stepper('d',it.d));
+  }
+  const links=strahl(k.x0,(k.y0+k.y1)/2,-1,0,W), oben=strahl((k.x0+k.x1)/2,k.y0,0,-1,W);
+  if(links) genau+=reihe('Abstand links',stepper('abL',links.d,1));
+  if(oben) genau+=reihe('Abstand oben',stepper('abO',oben.d,1));
+  return h+klappe(genau);
+}
+function inhaltFoto(s){
+  const hat=S.fotos[s.fotoKey]&&FOTOS.has(s.fotoKey);
+  return `<p class="ueber">Fotos · ${s.nr} von ${s.von}</p><h2>Stell dich in die blaue Ecke</h2><p class="hinweis">Das ist ${esc(s.ecke.name)}. Fotografiere von dort quer durch den Raum, so viel wie möglich drauf.</p>`+
+    (hat?`<img class="foto-gross" data-foto="${s.fotoKey}" alt="Dein Foto aus dieser Ecke">`:'')+
+    `<button class="knopf${hat?' zwei':''}" type="button" data-foto="${s.fotoKey}">${hat?'Noch mal fotografieren':'Foto machen'}</button>`+
+    (hat?`<button class="knopf leise" type="button" data-fotoweg="${s.fotoKey}">Foto entfernen</button>`:'');
+}
+function inhaltFotoExtra(s){
+  const ex=S.items.filter(i=>i.t==='fotopunkt');
+  return `<p class="ueber">Fotos · Nah dran</p><h2>Noch ein Foto von nah?</h2><p class="hinweis">Zum Beispiel Ventile, Anschlüsse, Revisionsklappe oder der Kasten. Jedes Detail hilft mir.</p>`+
+    (ex.length?`<div class="thumbs">${ex.map(i=>`<button type="button" data-waehle="${i.id}"><img data-foto="${i.id}" alt=""><span>${esc(i.text||'Detail')}</span></button>`).join('')}</div>`:'')+
+    `<button class="knopf" type="button" data-foto="neu">${ex.length?'Noch ein Foto':'Foto machen'}</button>`;
+}
+function fehlt(){
+  const hat=t=>S.items.some(i=>i.t===t), n=fotoListe().length;
+  const wandOk=waende().every(w=>(S.wandInfo[w.i]||{}).lage&&(S.wandInfo[w.i]||{}).stoff);
+  return [['Wände',wandOk],['Bodenaufbau',!!S.gebaeude.boden],['Abwasser',hat('fallrohr')&&!!S.abwasser.raus],['Tür',hat('tuer')],['WC',hat('wc')],['Waschbecken',hat('waschtisch')],['Dusche oder Wanne',hat('dusche')||hat('wanne')],['Wasser',hat('warm')||hat('kalt')],['Ventile',hat('ventil')],['Fotos',n>0]];
+}
+function inhaltSchicken(s){
+  const k=PARAM.get('k'), n=fotoListe().filter(f=>FOTOS.has(f.key)).length, teilen=!!navigator.canShare, offen=fehlt().filter(f=>!f[1]&&(!KURZ||['Tür','WC','Waschbecken','Dusche oder Wanne'].includes(f[0])));
+  return `<p class="ueber">Letzter Schritt</p><h2>Schick deinen Grundriss an Thommy</h2>
+  ${KURZ?'<p class="hinweis">Du bekommst innerhalb von 24 Stunden per WhatsApp eine Skizze, was aus deinem Badezimmer werden kann (Montag bis Freitag). Kostenlos.</p>':''}
+  ${offen.length?`<p class="hinweis">Noch offen ist nicht schlimm${KURZ?'.':', das klären wir im Gespräch.'}</p><div class="chips">${offen.map(([t])=>`<span class="chip offen">${esc(t)}</span>`).join('')}</div>`:''}
+  ${k?'':`<label class="feld">Dein Name<input id="f-name" autocomplete="given-name" value="${esc(S.vorname)}"></label>`}
+  <label class="feld">Was soll ich noch wissen? (freiwillig)<textarea id="f-notiz" placeholder="z. B. Wand B ist schief">${esc(S.notiz)}</textarea></label>
+  <div class="schicken"><b>1</b><div><strong>Nachricht an Thommy</strong><span>Der Knopf öffnet WhatsApp. Die Nachricht ist schon fertig geschrieben, du tippst nur auf Senden.</span><button class="knopf${gesendet?' zwei':''}" type="button" data-whatsapp>${gesendet?'✓ Noch mal öffnen':'WhatsApp öffnen'}</button></div></div>
+  <div class="schicken"><b>2</b><div><strong>Bild${n?` und ${n} ${n===1?'Foto':'Fotos'}`:''} hinterher</strong><span>${teilen?'Tippe auf den Knopf, wähle WhatsApp und dann Thommy.':'Speichert die Dateien. Zieh sie danach in den Chat.'}</span><button class="knopf${gesendet?'':' zwei'}" type="button" data-bild>${teilen?'Teilen':'Speichern'}</button></div></div>
+  <p class="hinweis">Dein Grundriss bleibt auch bei dir: In der Nachricht steht ein Link. Damit öffnest du ihn jederzeit wieder, direkt aus unserem Chat.</p>`;
+}
+function melde(t){ const m=wrap('meldung'); m.textContent=t; m.classList.add('an'); clearTimeout(melde.t); melde.t=setTimeout(()=>m.classList.remove('an'),3500); }
+
+function setzeFeld(key,wert){
+  const leerWert=wert===''||wert==null, v=Number(wert);
+  if(!leerWert&&!isFinite(v)) return;
+  merke();
+  const it=S.items.find(i=>i.id===sel);
+  if(['L','B','H','aw','at'].includes(key)){
+    if(leerWert) { verlauf.pop(); return; }
+    if(key==='H') S.H=clamp(v,100,500);
+    if(key==='L') S.L=clamp(v,80,1500);
+    if(key==='B') S.B=clamp(v,80,1500);
+    if(key==='aw') S.aw=clamp(v,20,S.L-40);
+    if(key==='at') S.at=clamp(v,20,S.B-40);
+    if(S.form==='l'){ S.aw=clamp(S.aw,20,S.L-40); S.at=clamp(S.at,20,S.B-40); }
+    normalisieren();
+  }else if(key==='etage'||key==='stufe'){
+    S.gebaeude={...S.gebaeude,[key]:leerWert?null:key==='etage'?clamp(Math.round(v),-1,40):clamp(v,0,60)};
+  }else if(key==='awH'){
+    S.abwasser={...S.abwasser,hoehe:leerWert?null:clamp(v,0,400)};
+  }else if(it){
+    const W=waende();
+    if(['knie','bruestung','oberkante','hoehe','podest','nh'].includes(key)) it[key]=leerWert?null:clamp(v,0,400);
+    else if(leerWert){ verlauf.pop(); zeigeInhalt(); return; }
+    if(key==='w'){ it.w=clamp(v,5,600); if(it.t==='fallrohr') it.d=it.w; }
+    if(key==='d'){ it.d=clamp(v,5,600); }
+    if(key==='abstand'){ const n=nahWand(it.x,it.y,W),w=n.w,s=clamp(v,0,Math.max(0,w.len-it.w))+it.w/2; it.x=w.a[0]+w.dx*s; it.y=w.a[1]+w.dy*s; }
+    if(key==='abL'||key==='abO'){
+      const k=kiste(it),cx=(k.x0+k.x1)/2,cy=(k.y0+k.y1)/2;
+      const st=key==='abL'?strahl(k.x0,cy,-1,0,W):strahl(cx,k.y0,0,-1,W);
+      if(st){ if(key==='abL') it.x+=Math.max(v,0)-st.d; else it.y+=Math.max(v,0)-st.d; }
+    }
+    if(TYP[it.t].art==='oeffnung') setzeOeffnung(it,it.x,it.y,false);
+    else if(TYP[it.t].zone) setzeObjekt(it,it.x,it.y,9999,false);
+    else haltImRaum(it);
+  }
+  speichere(); zeigeInhalt(); ansicht=null; maleplan();
+}
+wrap('panel').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||b.disabled) return;
+  const d=b.dataset, it=S.items.find(i=>i.id===sel), s=akt();
+  if(d.phase!==undefined){ geheZu(schritte().findIndex(x=>x.ph===Number(d.phase))); return; }
+  if(d.schritt){
+    if(d.leer==='1') S.antw[s.id]='nein';
+    else if(s.typen&&d.schritt==='1') delete S.antw[s.id];
+    geheZu(schritt+Number(d.schritt)); return;
+  }
+  if(d.plus){
+    const inp=b.parentElement.querySelector('input');
+    setzeFeld(d.plus,inp.value===''?({podest:15,etage:0,stufe:0,oberkante:(it&&it.bruestung!=null?it.bruestung:90)+120}[d.plus]??50):Number(inp.value)+Number(d.s)); return;
+  }
+  if(d.heiz){
+    merke(); const k=d.heiz, an=S.heizung.includes(k);
+    S.heizung=S.heizung.filter(x=>x!==k);
+    if(!an){ if(k==='keine'||k==='unklar') S.heizung=[]; else S.heizung=S.heizung.filter(x=>x!=='keine'&&x!=='unklar'); S.heizung.push(k); }
+    const anHk=S.heizung.includes('hk'), hks=S.items.some(x=>x.t==='heizung');
+    if(anHk&&!hks){ const n=neuesObjekt('heizung'); S.items.push(n); sel=n.id; }
+    if(!anHk&&hks){ S.items=S.items.filter(x=>x.t!=='heizung'); sel=null; }
+    delete S.antw[s.id]; speichere(); zeigeInhalt(); ansicht=null; maleplan(); return;
+  }
+  if('masse' in d){ masseOffen=true; zeigeInhalt(); return; }
+  if(d.foto){ fotoWartet=d.foto; wrap('kamera').click(); return; }
+  if(d.fotoweg){ merke(); delete S.fotos[d.fotoweg]; }
+  else if(d.form){ merke(); if(S.form!==d.form) S.wandInfo={}; S.form=d.form; normalisieren(); }
+  else if(d.ecke){ merke(); if(S.ecke!==d.ecke) S.wandInfo={}; S.ecke=d.ecke; normalisieren(); }
+  else if(d.awset){ merke(); S.abwasser={...S.abwasser,raus:d.awset}; }
+  else if(d.bauset){ merke(); const [k,v]=d.bauset.split(':'); S.gebaeude={...S.gebaeude,[k]:v}; }
+  else if(d.wandset){ merke(); const [k,v]=d.wandset.split(':'); S.wandInfo[s.wi]={...S.wandInfo[s.wi],[k]:v}; }
+  else if(d.neu){ merke(); delete S.antw[s.id]; const n=neuesObjekt(d.neu); S.items.push(n); sel=n.id; }
+  else if(d.waehle){ sel=d.waehle; masseOffen=false; }
+  else if(d.set&&it){ merke(); const [k,v]=d.set.split(':'); it[k]=v; if(k==='aufPodest'&&v==='ja'&&it.podest==null) it.podest=15; if(k==='form'&&it.t==='wanne'){ it.w=v==='eck'?140:TYP.wanne.w; it.d=v==='eck'?140:TYP.wanne.d; haltImRaum(it); } }
+  else if('drehen' in d&&it){ merke(); it.rot=(it.rot+90)%360; haltImRaum(it); }
+  else if('loeschen' in d&&it){
+    merke(); S.items=S.items.filter(i=>i!==it); delete S.fotos[it.id]; sel=null;
+    if(s.typen&&!S.items.some(x=>s.typen.includes(x.t))) S.antw[s.id]='nein';
+    if(s.immer&&S.antw[s.id]==='nein'){ speichere(); geheZu(schritt+1); return; }
+  }
+  else if('fertig' in d){ sel=null; }
+  else if(d.lead){ const [k,v]=d.lead.split(':'); S.lead={...S.lead,[k]:v}; }
+  else if(d.bedarf){ const [k,v]=d.bedarf.split(':'), q=BEDARF[k], b={...S.bedarf}; if(q.mehr){ const l=new Set(b[k]||[]); l.has(v)?l.delete(v):l.add(v); b[k]=[...l]; } else b[k]=b[k]===v?'':v; S.bedarf=b; }
+  else if('whatsapp' in d){ perWhatsApp(); gesendet=true; zeigeInhalt(); return; }
+  else if('bild' in d){ bildTeilen(); return; }
+  else return;
+  speichere(); zeigeInhalt(); ansicht=null; maleplan();
+});
+wrap('panel').addEventListener('change',e=>{
+  if(e.target.dataset.feld) setzeFeld(e.target.dataset.feld,e.target.value);
+});
+wrap('panel').addEventListener('input',e=>{
+  if(e.target.id==='f-name'){ S.vorname=e.target.value; speichere(); }
+  if(e.target.id==='f-plz'){ const vor=leadStand(), v=e.target.value.replace(/\D/g,'').slice(0,5); S.lead={...S.lead,plz:v}; speichere(); if(vor!==leadStand()||v.length===5){ zeigeInhalt(); const f=wrap('f-plz'); if(f&&v.length<5){ f.focus(); f.setSelectionRange(v.length,v.length); } } }
+  if(e.target.id==='f-notiz'){ S.notiz=e.target.value; speichere(); }
+  if(e.target.id==='f-awnotiz'){ S.abwasser={...S.abwasser,notiz:e.target.value}; speichere(); }
+  if(e.target.dataset.text){ const it=S.items.find(i=>i.id===sel); if(it){ it[e.target.dataset.text]=e.target.value; speichere(); maleplan(); } }
+});
+wrap('b-zurueck').addEventListener('click',zurueck);
+function zurueck(){ if(!verlauf.length) return; S=JSON.parse(verlauf.pop()); if(!S.items.some(i=>i.id===sel)) sel=null; speichere(); zeigeInhalt(); ansicht=null; maleplan(); }
+wrap('b-neu').addEventListener('click',()=>{
+  if(!S.items.length&&S.L===300&&S.B===220&&!schritt) return;
+  wrap('neu-frage').showModal();
+});
+wrap('neu-nein').addEventListener('click',()=>wrap('neu-frage').close());
+wrap('neu-ja').addEventListener('click',()=>{
+  wrap('neu-frage').close();
+  verlauf=[]; fotosLeeren(); S=leer(); sel=null; schritt=0; gesendet=false; speichere(); zeigeInhalt(); ansicht=null; maleplan();
+});
+addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if((e.metaKey||e.ctrlKey)&&e.key==='z'){ e.preventDefault(); zurueck(); return; }
+  const it=S.items.find(i=>i.id===sel); if(!it) return;
+  if(e.key==='Delete'||e.key==='Backspace'){ merke(); S.items=S.items.filter(i=>i!==it); sel=null; speichere(); zeigeInhalt(); maleplan(); }
+  const pf={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(pf){ e.preventDefault(); merke(); const nx=it.x+pf[0],ny=it.y+pf[1];
+    if(TYP[it.t].art==='oeffnung') setzeOeffnung(it,nx,ny,false); else { it.x=nx; it.y=ny; haltImRaum(it); }
+    speichere(); zeigeInhalt(); maleplan(); }
+});
+
+/* ---------- Ergebnis: Bild und Text ---------- */
+const hoeheTxt=(it)=>it.hoehe==null?'':`, ${r1(it.hoehe)} cm ab Boden`;
+function beschreibung(){
+  const W=waende(), b=wandBuchstaben(W);
+  const zeilen=(KURZ?[]:[...W].sort((x,y)=>b[x.i].localeCompare(b[y.i])).map(w=>wandText(w,b))).concat(S.items.filter(i=>i.t!=='fotopunkt').map((it,n)=>{
+    const T=TYP[it.t];
+    if(T.art==='oeffnung'){
+      const q=nahWand(it.x,it.y,W), von=r1(q.s-it.w/2), wa=b[q.w.i];
+      if(it.t==='tuer') return `${n+1}  Tür, Wand ${wa}: ${r1(it.w)} cm breit, ${von} cm von links, Scharnier ${it.anschlag||'links'}, geht nach ${it.auf==='aussen'?'außen':'innen'} auf`;
+      if(it.t==='fenster') return `${n+1}  Fenster, Wand ${wa}: ${r1(it.w)} cm breit, ${von} cm von links`+(it.bruestung==null?'':`, Unterkante ${r1(it.bruestung)} cm`)+(it.oberkante==null?'':`, Oberkante ${r1(it.oberkante)} cm`)+(it.bruestung==null&&it.oberkante==null?'':' ab Boden');
+      if(it.t==='nische') return `${n+1}  Nische, Wand ${wa}${it.sitzt==='vorwand'?', in der Vorwand':''}: ${r1(it.w)} cm breit, ${r1(it.nh)} cm hoch, ${r1(it.d)} cm tief, ${von} cm von links, ${r1(it.hoehe)} cm ab Boden`;
+      if(it.t==='schalter') return `${n+1}  Lichtschalter, Wand ${wa}: ${it.seite==='aussen'?'draußen im Flur':'im Badezimmer'}, ${von} cm von links${hoeheTxt(it)}`;
+      return `${n+1}  ${T.name}, Wand ${wa}: ${von} cm von links${hoeheTxt(it)}`;
+    }
+    if(T.zone){ const q=nahWand(it.x,it.y,W); return `${n+1}  Dachschräge, Wand ${b[q.w.i]}: reicht ${r1(it.d)} cm in den Raum, ${r1(it.knie)} cm hoch an der Wand`; }
+    const k=kiste(it),cx=(k.x0+k.x1)/2,cy=(k.y0+k.y1)/2;
+    const sx=[strahl(k.x0,cy,-1,0,W),strahl(k.x1,cy,1,0,W)].filter(Boolean).sort((a,c)=>a.d-c.d)[0];
+    const sy=[strahl(cx,k.y0,0,-1,W),strahl(cx,k.y1,0,1,W)].filter(Boolean).sort((a,c)=>a.d-c.d)[0];
+    const ab=[sx,sy].filter(Boolean).map(s=>`${r1(s.d)} cm von Wand ${b[s.w.i]}`).join(', ');
+    if(T.punkt){
+      const zus=it.t==='abfluss'?(it.ort==='wand'?', in der Wand':', im Boden'):it.t==='ventil'?({eck:', Eckventil',haupt:', Haupthahn'}[it.ventilArt]||''):'';
+      return `${n+1}  ${T.name}${zus}: ${ab}${hoeheTxt(it)}`;
+    }
+    if(it.t==='strang') return `${n+1}  Abwasserleitung: ${r1(it.w)} cm lang, ${ab}`;
+    if(it.t==='lueftrohr') return `${n+1}  Lüftungsrohr: ${r1(it.w)} cm lang, ${ab}`;
+    if(it.t==='wand') return `${n+1}  Zwischenwand: ${r1(it.w)} cm lang, ${r1(it.d)} cm dick, ${it.wandArt==='glas'?'Glas':it.wandArt==='halb'?'halbhoch'+(it.hoehe==null?'':' '+r1(it.hoehe)+' cm'):'bis zur Decke'}, ${ab}`;
+    if(it.t==='vorwand') return `${n+1}  Vorwand: ${r1(it.w)} cm breit, ${r1(it.d)} cm tief, ${it.hoehe==null?'Höhe unbekannt':r1(it.hoehe)+' cm hoch'}, ${ab}`;
+    const masz=SANITAER.includes(it.t)?'':it.t==='fallrohr'?`Ø ${r1(it.w)} cm`:it.t==='revision'?`${r1(it.w)} cm breit`:`${r1(it.w)} × ${r1(it.d)} cm`;
+    const pod=it.aufPodest==='ja'?`, auf Podest ${it.podest==null?'':r1(it.podest)+' cm'}`.trimEnd():'';
+    const nm=it.t==='sonstiges'&&it.text?it.text:it.form==='eck'?'Eckbadewanne':it.t==='therme'?GERAET[it.geraet||'unklar']:T.name;
+    return `${n+1}  ${nm}: ${[masz,ab].filter(Boolean).join(', ')}${pod}${hoeheTxt(it)}`;
+  }));
+  if(!KURZ) zeilen.push(...gebaeudeZeilen(),abwasserText(),...gefaelleZeilen());
+  if(S.heizung.length) zeilen.push('Heizung: '+HEIZARTEN.filter(([k])=>S.heizung.includes(k)).map(([,t])=>t).join(', '));
+  const nicht=FRAGEN.filter(f=>f.id!=='heizung'&&f.typen&&S.antw[f.id]==='nein'&&!S.items.some(x=>f.typen.includes(x.t))).map(f=>TYP[f.typen[0]].name.split(' ')[0]);
+  if(nicht.length) zeilen.push('Nicht eingezeichnet: '+nicht.join(', '));
+  fotoListe().forEach(f=>zeilen.push(`Foto ${f.nr}: ${f.titel}`));
+  return zeilen;
+}
+function nachricht(){
+  const name=(S.vorname||PARAM.get('v')||'').trim(), k=PARAM.get('k'), link=planLink(), n=fotoListe().length;
+  let t=KURZ?`Hallo Thommy, hier ist mein Grundriss für die kostenlose Skizze.`:`Hallo Thommy, hier ist mein Grundriss.`;
+  if(name) t+=`\nName: ${name}`;
+  if(k) t+=`\nKundencode: ${k}`;
+  if(KURZ){ const l=S.lead||{}; t+=`\nPLZ: ${l.plz||'?'}\nEigentümer: ${l.eigen==='ja'?'ja':l.eigen==='nein'?'nein, Miete':'?'}\nWann: ${(LEAD_WANN.find(([k])=>k===l.wann)||[,'?'])[1]}`;
+    t+=`\nNutzen: ${bedarfText('wer')||'?'}\nWanne oder Dusche: ${bedarfText('wanne')||'?'}\nNervt: ${bedarfText('nervt')||'?'}`; }
+  t+=`\nRaum: ${r1(S.L)} × ${r1(S.B)} cm, Höhe ${r1(S.H)} cm`;
+  if(!KURZ){
+    const Wa=waende(), bu=wandBuchstaben(Wa);
+    t+=`\n`+[...Wa].sort((x,y)=>bu[x.i].localeCompare(bu[y.i])).map(w=>wandText(w,bu)).join('\n');
+    t+=`\n`+[...gebaeudeZeilen(),abwasserText(),...gefaelleZeilen()].join('\n');
+  }
+  if(n) t+=`\nFotos: ${n}, schicke ich gleich hinterher`;
+  if(S.notiz.trim()) t+=`\nHinweis: ${S.notiz.trim()}`;
+  if(link) t+=`\n\nGrundriss öffnen:\n${link}`;
+  else t+=`\n\n`+beschreibung().join('\n');
+  return t;
+}
+function perWhatsApp(){ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(nachricht())}`,'_blank','noopener'); }
+async function bildErstellen(){
+  try{ await document.fonts.load('600 20px Poppins'); await document.fonts.load('400 20px Poppins'); }catch(e){}
+  const B=1400, zeilen=beschreibung();
+  const pw=B-80, seiten=(S.B+WAND*2)/(S.L+WAND*2), ph=Math.min(1100,Math.max(420,Math.round(pw*seiten)+140));
+  const v=rahmen(pw,ph,90), merk=sel; sel=null;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}" viewBox="${v.x} ${v.y} ${v.w} ${v.h}">${zeichne(v,{export:true})}</svg>`;
+  sel=merk;
+  const img=new Image();
+  await new Promise((ok,no)=>{ img.onload=ok; img.onerror=no; img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); });
+  const zh=38, kopfH=120, H=kopfH+ph+40+(zeilen.length+2)*zh+100;
+  const c=document.createElement('canvas'); c.width=B; c.height=H;
+  const g=c.getContext('2d');
+  g.fillStyle='#fff'; g.fillRect(0,0,B,H);
+  g.fillStyle='#7C2323'; g.fillRect(0,0,B,kopfH);
+  g.fillStyle='#fff'; g.font='600 38px Poppins,sans-serif'; g.fillText('Mein Badezimmer: Grundriss',40,58);
+  const name=(S.vorname||PARAM.get('v')||'').trim(), datum=new Date().toLocaleDateString('de-DE');
+  g.font='400 24px Poppins,sans-serif'; g.fillText([name,datum,`${r1(S.L)} × ${r1(S.B)} cm, Höhe ${r1(S.H)} cm`].filter(Boolean).join('  ·  '),40,98);
+  g.drawImage(img,40,kopfH+10);
+  let y=kopfH+ph+40;
+  g.fillStyle='#E4C288'; g.fillRect(40,y-14,B-80,2);
+  g.fillStyle='#1A1A1A'; g.font='600 26px Poppins,sans-serif'; g.fillText('Was ist wo?',40,y+22); y+=zh+22;
+  g.font='400 24px Poppins,sans-serif'; g.fillStyle='#1A1A1A';
+  if(!zeilen.length) { g.fillStyle='#46423E'; g.fillText('Noch nichts eingezeichnet.',40,y); y+=zh; }
+  for(const z of zeilen){ g.fillText(z,40,y,B-80); y+=zh; }
+  if(S.notiz.trim()){ g.fillStyle='#46423E'; g.fillText('Hinweis: '+S.notiz.trim(),40,y,B-80); }
+  g.fillStyle='#46423E'; g.font='400 20px Poppins,sans-serif'; g.fillText('Thomas Buß – Badberatung · Für eine Badsanierung ohne Stress. · Maße vom Kunden gemessen, alle Angaben in cm',40,H-30,B-80);
+  return new Promise(r=>c.toBlob(r,'image/png'));
+}
+/* Skizze für die kostenlose Grundriss-Skizze (heute und Vorschlag): ohne Maße, ohne Technik-Punkte. */
+async function skizzeErstellen(titel,text){
+  try{ await document.fonts.load('600 20px Poppins'); await document.fonts.load('400 20px Poppins'); }catch(e){}
+  const B=1400, pw=B-80, seiten=(S.B+WAND*2)/(S.L+WAND*2), ph=Math.min(1100,Math.max(420,Math.round(pw*seiten)+140));
+  const v=rahmen(pw,ph,90), merk=sel; sel=null;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}" viewBox="${v.x} ${v.y} ${v.w} ${v.h}">${zeichne(v,{export:true,skizze:true})}</svg>`;
+  sel=merk;
+  const img=new Image();
+  await new Promise((ok,no)=>{ img.onload=ok; img.onerror=no; img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); });
+  const c=document.createElement('canvas'), g=c.getContext('2d');
+  g.font='400 28px Poppins,sans-serif';
+  const zeilen=[]; for(const absatz of String(text||'').split('\n')){ let z=''; for(const wort of absatz.split(' ')){ const t=z?z+' '+wort:wort; if(g.measureText(t).width>B-80&&z){ zeilen.push(z); z=wort; } else z=t; } if(z) zeilen.push(z); }
+  const kopfH=120, zh=42, H=kopfH+ph+30+zeilen.length*zh+(zeilen.length?30:0)+70;
+  c.width=B; c.height=H;
+  g.fillStyle='#fff'; g.fillRect(0,0,B,H);
+  g.fillStyle='#7C2323'; g.fillRect(0,0,B,kopfH);
+  const name=(S.vorname||PARAM.get('v')||'').trim();
+  g.fillStyle='#fff'; g.font='600 40px Poppins,sans-serif'; g.fillText(titel,40,60);
+  g.font='400 24px Poppins,sans-serif'; g.fillText([name?'Badezimmer von '+name:'Dein Badezimmer','Skizze ohne Maße'].join('  ·  '),40,100);
+  g.drawImage(img,40,kopfH+10);
+  let y=kopfH+ph+40;
+  g.fillStyle='#1A1A1A'; g.font='400 28px Poppins,sans-serif';
+  for(const z of zeilen){ g.fillText(z,40,y); y+=zh; }
+  g.fillStyle='#46423E'; g.font='400 20px Poppins,sans-serif'; g.fillText('Skizze, noch nicht vor Ort geprüft. · Thomas Buß – Badberatung',40,H-30,B-80);
+  return new Promise(r=>c.toBlob(r,'image/png'));
+}
+/* Nummer und Ecke kommen ins Foto, weil WhatsApp Dateinamen nicht zeigt. */
+async function fotoBeschriftet(f){
+  const i=await bildAus(FOTOS.get(f.key)), c=document.createElement('canvas');
+  c.width=i.naturalWidth; c.height=i.naturalHeight;
+  const g=c.getContext('2d'), fs=Math.max(22,Math.round(c.width/34)), h=fs*2;
+  g.drawImage(i,0,0);
+  g.fillStyle='#7C2323'; g.fillRect(0,c.height-h,c.width,h);
+  g.fillStyle='#fff'; g.font=`600 ${fs}px Poppins,sans-serif`; g.fillText(`Foto ${f.nr}: ${f.titel}`,fs*.7,c.height-h*.32,c.width-fs*1.4);
+  return new Promise(r=>c.toBlob(r,'image/jpeg',.85));
+}
+async function bildTeilen(){
+  const tag=new Date().toISOString().slice(0,10);
+  let dateien;
+  try{
+    dateien=[new File([await bildErstellen()],`${tag}-grundriss.png`,{type:'image/png'})];
+    for(const f of fotoListe().filter(x=>FOTOS.has(x.key))) dateien.push(new File([await fotoBeschriftet(f)],`${tag}-foto-${f.nr}.jpg`,{type:'image/jpeg'}));
+  }catch(e){ melde('Das hat nicht geklappt. Schick mir die Nachricht trotzdem, dann klären wir es.'); return; }
+  if(navigator.canShare&&navigator.canShare({files:dateien})){
+    try{ await navigator.share({files:dateien}); return; }catch(e){ if(e.name==='AbortError') return; }
+  }
+  dateien.forEach((d,i)=>setTimeout(()=>{ const a=document.createElement('a'), u=URL.createObjectURL(d); a.href=u; a.download=d.name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),6000); },i*400));
+  melde(dateien.length>1?`${dateien.length} Dateien gespeichert. Zieh sie jetzt in den Chat.`:'Bild gespeichert. Zieh es jetzt in den Chat.');
+}
+window.__gg={get S(){return S}, get schritt(){return schritt}, bildErstellen, nachricht, beschreibung, fotoAufnehmen, fotoListe, schritte, geheZu, fotoBeschriftet};
+
+/* ---------- Start ---------- */
+ladeSpeicher();
+// Ältere Pläne: gezeichneter Heizkörper gilt als gewählt
+if(S.items.some(i=>i.t==='heizung')&&!S.heizung.includes('hk')) S.heizung.push('hk');
+normalisieren();
+speichere();
+zeigeInhalt();
+maleplan();
+fotosLaden();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(maleplan);
+/* Für Zoros Werkzeug (werkzeuge/planer-bild.py): ?bild=1 zeichnet den Bestand, ?skizze=1&titel=…&text=… eine Variante ohne Maße. Ergebnis als <img id="export-bild">. */
+if(PARAM.get('bild')==='1'||PARAM.get('skizze')==='1'){
+  (async()=>{ try{ const blob=PARAM.get('skizze')==='1'?await skizzeErstellen(PARAM.get('titel')||'Variante',PARAM.get('text')||''):await bildErstellen();
+    const url=await new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(blob); });
+    const i=document.createElement('img'); i.id='export-bild'; i.src=url; i.style.display='none'; document.body.appendChild(i); document.title='EXPORT FERTIG';
+  }catch(e){ document.title='EXPORT FEHLER '+e; } })();
+}
+if('serviceWorker' in navigator && /^https?:/.test(location.protocol) && location.hostname!=='localhost' && location.hostname!=='127.0.0.1') navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
