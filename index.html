@@ -1161,7 +1161,7 @@ function inhaltRaus(s){
     `<div class="block"><div class="wahl halb">${Object.entries(RAUS).map(([k,t])=>`<button type="button" data-awset="${k}" aria-pressed="${a.raus===k}">${t}</button>`).join('')}</div></div>`+
     (S.items.some(i=>i.t==='ausgang')?`<p class="hinweis abstand">Zieh AW im Plan an die Stelle, wo das Rohr rausgeht.</p>`:`<button class="knopf zwei" type="button" data-neu="ausgang">Stelle im Plan markieren</button>`)+
     reihe('Rohrmitte ab Boden',stepper('awH',a.hoehe))+
-    `<label class="feld">Weißt du etwas zum Gefälle oder zum Rohr? (freiwillig)<textarea id="f-awnotiz" placeholder="z. B. läuft unter dem Estrich, 2 cm Gefälle auf 1 m">${esc(a.notiz||'')}</textarea></label>`;
+    `<label class="feld">Weißt du etwas zum Gefälle oder zum Rohr?<textarea id="f-awnotiz" placeholder="z. B. läuft unter dem Estrich, 2 cm Gefälle auf 1 m">${esc(a.notiz||'')}</textarea></label>`;
 }
 function abwasserText(){
   const a=S.abwasser, t=[];
