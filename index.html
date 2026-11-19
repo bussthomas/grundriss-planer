@@ -954,7 +954,7 @@ function schritte(){
   l.splice(l.findIndex(f=>f.id==='nische')+1,0,...waende().map(w=>({id:'wandinfo'+w.i, ph:0, art:'wandinfo', wi:w.i})));
   ecken().forEach((e,n,alle)=>l.push({id:e.key, ph:4, art:'foto', fotoKey:e.key, ecke:e, nr:n+1, von:alle.length}));
   l.push({id:'fotoExtra', ph:4, art:'fotoExtra'});
-  l.push({id:'senden', ph:5, art:'senden'});
+  l.push({id:'bedarf',ph:5,art:'bedarf'},{id:'lead',ph:5,art:'lead'},{id:'senden', ph:5, art:'senden'});
   return l;
 }
 function geheZu(i){
@@ -1063,7 +1063,7 @@ function inhaltLead(s){
 function inhaltBedarf(s){
   const b=S.bedarf||{}, reihe=f=>{ const q=BEDARF[f], an=k=>q.mehr?(b[f]||[]).includes(k):b[f]===k;
     return `<div class="block"><p>${q.frage}${q.mehr?' Mehreres geht.':''}</p><div class="wahl">${q.wahl.map(([k,t])=>`<button type="button" data-bedarf="${f}:${k}" aria-pressed="${an(k)}">${t}</button>`).join('')}</div></div>`; };
-  return kopf(s,'Noch 3 kurze Fragen','Damit meine Skizze zu dir passt.')+reihe('wer')+reihe('wanne')+reihe('nervt');
+  return kopf(s,'Noch 3 kurze Fragen',KURZ?'Damit meine Skizze zu dir passt.':'Damit mein Vorschlag zu dir passt.')+reihe('wer')+reihe('wanne')+reihe('nervt');
 }
 function inhaltMasse(s){
   const v=PARAM.get('v');
@@ -1428,7 +1428,7 @@ function nachricht(){
   let t=KURZ?`Hallo Thommy, hier ist mein Grundriss für die kostenlose Skizze.`:`Hallo Thommy, hier ist mein Grundriss.`;
   if(name) t+=`\nName: ${name}`;
   if(k) t+=`\nKundencode: ${k}`;
-  if(KURZ){ const l=S.lead||{}; t+=`\nPLZ: ${l.plz||'?'}\nEigentümer: ${l.eigen==='ja'?'ja':l.eigen==='nein'?'nein, Miete':'?'}\nWann: ${(LEAD_WANN.find(([k])=>k===l.wann)||[,'?'])[1]}`;
+  { const l=S.lead||{}; t+=`\nPLZ: ${l.plz||'?'}\nEigentümer: ${l.eigen==='ja'?'ja':l.eigen==='nein'?'nein, Miete':'?'}\nWann: ${(LEAD_WANN.find(([k])=>k===l.wann)||[,'?'])[1]}`;
     t+=`\nNutzen: ${bedarfText('wer')||'?'}\nWanne oder Dusche: ${bedarfText('wanne')||'?'}\nNervt: ${bedarfText('nervt')||'?'}`; }
   t+=`\nRaum: ${r1(S.L)} × ${r1(S.B)} cm, Höhe ${r1(S.H)} cm`;
   if(!KURZ){
