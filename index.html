@@ -270,19 +270,37 @@ const r5 = (v) => Math.round(v/5)*5;
 const r1 = (v) => Math.round(v);
 const esc = (s) => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* Kurzer Link: Plan gepackt (deflate) als #z=…. Ältere Links mit #p=… (ungepackt) öffnen weiter. */
+let zHash=null, kurzCode='', kurzFuer='';
+const b64u = (bytes) => { let t=''; bytes.forEach(b=>t+=String.fromCharCode(b)); return btoa(t).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); };
+const b64uZu = (c) => Uint8Array.from(atob(c.replace(/-/g,'+').replace(/_/g,'/')),x=>x.charCodeAt(0));
+async function strom(bytes,S_){ const r=new Blob([bytes]).stream().pipeThrough(S_); return new Uint8Array(await new Response(r).arrayBuffer()); }
+function planText(){ const {vorname,notiz,lead:_l,schritt:_s,...plan} = S; return JSON.stringify(plan,(k,v)=>v===null||(k!==''&&v&&typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length)?undefined:v); }
+async function packe(){
+  if(typeof CompressionStream==='undefined') return;
+  const t=planText();
+  try{ const c=b64u(await strom(new TextEncoder().encode(t),new CompressionStream('deflate-raw'))); kurzCode=c; kurzFuer=t; }catch(e){}
+}
+async function ladeKurz(){
+  if(!zHash||typeof DecompressionStream==='undefined') return;
+  try{ const plan=JSON.parse(new TextDecoder().decode(await strom(b64uZu(zHash),new DecompressionStream('deflate-raw'))));
+    S={...leer(),...plan}; schritt=9999; sel=null; normalisieren(); speichere(); zeigeInhalt(); ansicht=null; maleplan();
+  }catch(e){ melde('Diesen Link konnte ich nicht öffnen.'); }
+}
 function ladeSpeicher(){
+  const z = location.hash.match(/z=([\w-]+)/);
+  if(z){ zHash=z[1]; history.replaceState(null,'',location.pathname+location.search); }
   const m = location.hash.match(/p=([\w-]+)/);
   if(m){ try{ S = {...leer(), ...JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))))}; schritt=9999; history.replaceState(null,'',location.pathname+location.search); return; }catch(e){} }
   try{ const t = localStorage.getItem(SPEICHER); if(t){ S = {...leer(), ...JSON.parse(t)}; schritt=S.schritt||0; } }catch(e){}
 }
-function speichere(){ S.schritt=schritt; try{ localStorage.setItem(SPEICHER, JSON.stringify(S)); }catch(e){} }
+function speichere(){ S.schritt=schritt; try{ localStorage.setItem(SPEICHER, JSON.stringify(S)); }catch(e){} packe(); }
 function merke(){ verlauf.push(JSON.stringify(S)); if(verlauf.length>60) verlauf.shift(); wrap('b-zurueck').disabled=false; }
 function planLink(){
   if(!/^https?:/.test(location.protocol)) return '';
-  const {vorname,notiz,lead:_l,schritt:_s,...plan} = S;
-  const c = btoa(unescape(encodeURIComponent(JSON.stringify(plan)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  const k = PARAM.get('k');
-  return location.origin+location.pathname+(k?'?k='+encodeURIComponent(k):'')+'#p='+c;
+  const t = planText(), k = PARAM.get('k'), basis = location.origin+location.pathname+(k?'?k='+encodeURIComponent(k):'');
+  if(kurzFuer===t&&kurzCode) return basis+'#z='+kurzCode;
+  return basis+'#p='+btoa(unescape(encodeURIComponent(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 
 /* ---------- Raumgeometrie ---------- */
@@ -1570,6 +1588,7 @@ speichere();
 zeigeInhalt();
 maleplan();
 fotosLaden();
+ladeKurz();
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(maleplan);
 /* Für Zoros Werkzeug (werkzeuge/planer-bild.py): ?bild=1 zeichnet den Bestand, ?skizze=1&titel=…&text=… eine Variante ohne Maße. Ergebnis als <img id="export-bild">. */
 if(PARAM.get('bild')==='1'||PARAM.get('skizze')==='1'){
