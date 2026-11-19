@@ -1240,16 +1240,16 @@ function felder(it){
 }
 function inhaltFoto(s){
   const hat=S.fotos[s.fotoKey]&&FOTOS.has(s.fotoKey);
-  return `<p class="ueber">Fotos · ${s.nr} von ${s.von}</p><h2>Stell dich in die blaue Ecke</h2><p class="hinweis">Das ist ${esc(s.ecke.name)}. Fotografiere von dort quer durch den Raum, so viel wie möglich drauf.</p>`+
+  return `<p class="ueber">Fotos · ${s.nr} von ${s.von}</p><h2>Stell dich in die blaue Ecke</h2><p class="hinweis">Das ist ${esc(s.ecke.name)}. Fotografiere von dort quer durch den Raum, so viel wie möglich drauf. Bist du gerade nicht vor Ort? Nimm ein Foto aus deiner Galerie, das ungefähr aus dieser Ecke gemacht ist.</p>`+
     (hat?`<img class="foto-gross" data-foto="${s.fotoKey}" alt="Dein Foto aus dieser Ecke">`:'')+
-    `<button class="knopf${hat?' zwei':''}" type="button" data-foto="${s.fotoKey}">${hat?'Noch mal fotografieren':'Foto machen'}</button>`+
+    `<button class="knopf${hat?' zwei':''}" type="button" data-foto="${s.fotoKey}">${hat?'Anderes Foto nehmen':'Foto machen oder auswählen'}</button>`+
     (hat?`<button class="knopf leise" type="button" data-fotoweg="${s.fotoKey}">Foto entfernen</button>`:'');
 }
 function inhaltFotoExtra(s){
   const ex=S.items.filter(i=>i.t==='fotopunkt');
-  return `<p class="ueber">Fotos · Nah dran</p><h2>Noch ein Foto von nah?</h2><p class="hinweis">Zum Beispiel Ventile, Anschlüsse, Revisionsklappe oder der Kasten. Jedes Detail hilft mir.</p>`+
+  return `<p class="ueber">Fotos · Nah dran</p><h2>Noch ein Foto von nah?</h2><p class="hinweis">Zum Beispiel Ventile, Anschlüsse, Revisionsklappe oder der Kasten. Jedes Detail hilft mir. Fotos aus deiner Galerie gehen auch.</p>`+
     (ex.length?`<div class="thumbs">${ex.map(i=>`<button type="button" data-waehle="${i.id}"><img data-foto="${i.id}" alt=""><span>${esc(i.text||'Detail')}</span></button>`).join('')}</div>`:'')+
-    `<button class="knopf" type="button" data-foto="neu">${ex.length?'Noch ein Foto':'Foto machen'}</button>`;
+    `<button class="knopf" type="button" data-foto="neu">${ex.length?'Noch ein Foto':'Foto machen oder auswählen'}</button>`;
 }
 function fehlt(){
   const hat=t=>S.items.some(i=>i.t===t), n=fotoListe().length;
