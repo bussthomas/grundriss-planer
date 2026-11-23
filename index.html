@@ -463,7 +463,7 @@ function neuesObjekt(t){
   const T=TYP[t], W=waende().slice().sort((a,b)=>b.len-a.len);
   const it={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5), t, w:T.w, rot:0, x:0, y:0};
   if(T.art==='oeffnung'){
-    if(t==='tuer'){ it.anschlag='links'; it.auf='innen'; }
+    if(t==='tuer'){ it.anschlag='links'; it.auf='innen'; it.blende='ja'; it.blendeB=6; }
     else if(t==='fenster'){ it.bruestung=90; }
     else if(t==='nische'){ it.hoehe=100; it.nh=60; it.d=10; it.sitzt='wand'; }
     else { it.hoehe=null; if(t==='schalter') it.seite='innen'; }
@@ -582,7 +582,8 @@ function oeffnungSymbol(it,c,sw){
   if(it.t==='fenster') return band+`<path d="M${-hw} ${-WAND}H${hw}V0H${-hw}Z M${-hw} ${-WAND/2}H${hw}" fill="none" stroke="${c}" stroke-width="${sw}"/>`;
   const links=it.anschlag!=='rechts', sg=it.auf==='aussen'?-1:1, hx=links?-hw:hw, y0=sg>0?0:-WAND, tip=y0+sg*it.w;
   const sweep=links===(sg>0)?0:1;
-  return band+`<path d="M${hx} ${y0}V${tip}" stroke="${c}" stroke-width="${sw*2}" fill="none"/>`+
+  const bb=it.blende!=='ja'?0:(it.blendeB==null?6:it.blendeB), bl=bb>0?`<path d="M${-hw-bb} 0H${-hw}V2H${-hw-bb}Z M${hw} 0H${hw+bb}V2H${hw}Z" fill="${c}" opacity=".55"/>`:'';
+  return band+bl+`<path d="M${hx} ${y0}V${tip}" stroke="${c}" stroke-width="${sw*2}" fill="none"/>`+
     `<path d="M${hx} ${tip}A${it.w} ${it.w} 0 0 ${sweep} ${links?hw:-hw} ${y0}" stroke="${c}" stroke-width="${sw*.8}" fill="none" stroke-dasharray="${sw*3} ${sw*2.5}"/>`;
 }
 function iconSvg(t){
@@ -968,7 +969,7 @@ const bedarfText=f=>{ const q=BEDARF[f], w=[].concat((S.bedarf||{})[f]||[]); ret
 const FRAGEN = [
   {id:'masse', ph:0, art:'masse', griffe:true},
   {id:'form', ph:0, art:'form', griffe:true},
-  {id:'tuer', ph:0, typen:['tuer'], immer:true, frage:'Wo ist die Tür?', hilfe:'Zieh sie auf die richtige Wand. Der gestrichelte Bogen zeigt, wie sie aufgeht.'},
+  {id:'tuer', ph:0, typen:['tuer'], immer:true, frage:'Wo ist die Tür?', hilfe:'Zieh sie auf die richtige Wand. Der gestrichelte Bogen zeigt, wie sie aufgeht. Als Breite zählt nur die Öffnung, durch die du gehst. Die Blende (Zierleiste rund um die Tür) trägst du darunter ein.'},
   {id:'fenster', ph:0, typen:['fenster'], mehrfach:true, frage:'Gibt es ein Fenster?', hilfe:''},
   {id:'schraege', ph:0, typen:['schraege'], frage:'Gibt es eine Dachschräge?', hilfe:''},
   {id:'dachfenster', ph:0, typen:['dachfenster'], mehrfach:true, frage:'Gibt es ein Dachfenster?', hilfe:'Zieh es dorthin, wo es von oben gesehen sitzt.'},
@@ -1249,7 +1250,10 @@ function felder(it){
     if(it.t==='tuer'){
       h+=wahl('Tür geht auf','auf',[['innen','Nach innen'],['aussen','Nach außen']],it.auf==='aussen'?'aussen':'innen');
       h+=wahl('Scharnier (vom Raum aus gesehen)','anschlag',[['links','Links'],['rechts','Rechts']],it.anschlag==='rechts'?'rechts':'links');
-      genau+=reihe('Breite',stepper('w',it.w));
+      // Thommy 2026-11-23 (Hinweis der Testkunden): Blende abfragen und klar sagen, was „Breite“ meint.
+      h+=wahl('Hat die Tür innen eine Blende? (Zierleiste rund um die Tür)','blende',[['ja','Ja'],['nein','Nein']],it.blende);
+      if(it.blende==='ja') h+=reihe('Wie breit ist die Blende?',stepper('blendeB',it.blendeB==null?6:it.blendeB,1));
+      genau+=reihe('Breite der Öffnung',stepper('w',it.w));
     }
     if(it.t==='fenster') genau+=reihe('Breite',stepper('w',it.w))+reihe('Unterkante ab Boden',stepper('bruestung',it.bruestung))+reihe('Oberkante ab Boden',stepper('oberkante',it.oberkante));
     if(it.t==='nische'){
@@ -1347,6 +1351,7 @@ function setzeFeld(key,wert){
   }else if(it){
     const W=waende();
     if(['knie','bruestung','oberkante','hoehe','podest','nh'].includes(key)) it[key]=leerWert?null:clamp(v,0,400);
+    else if(key==='blendeB') it.blendeB=leerWert?null:clamp(v,0,20);
     else if(leerWert){ verlauf.pop(); zeigeInhalt(); return; }
     if(key==='w'){ it.w=clamp(v,5,600); if(it.t==='fallrohr') it.d=it.w; }
     if(key==='d'){ it.d=clamp(v,5,600); }
@@ -1373,7 +1378,7 @@ wrap('panel').addEventListener('click',e=>{
   }
   if(d.plus){
     const inp=b.parentElement.querySelector('input');
-    setzeFeld(d.plus,inp.value===''?({podest:15,etage:0,stufe:0,oberkante:(it&&it.bruestung!=null?it.bruestung:90)+120}[d.plus]??50):Number(inp.value)+Number(d.s)); return;
+    setzeFeld(d.plus,inp.value===''?({podest:15,blendeB:6,etage:0,stufe:0,oberkante:(it&&it.bruestung!=null?it.bruestung:90)+120}[d.plus]??50):Number(inp.value)+Number(d.s)); return;
   }
   if(d.heiz){
     merke(); const k=d.heiz, an=S.heizung.includes(k);
@@ -1449,7 +1454,7 @@ function beschreibung(){
     const T=TYP[it.t];
     if(T.art==='oeffnung'){
       const q=nahWand(it.x,it.y,W), von=r1(q.s-it.w/2), wa=b[q.w.i];
-      if(it.t==='tuer') return `${n+1}  Tür, Wand ${wa}: ${r1(it.w)} cm breit, ${von} cm von links, Scharnier ${it.anschlag||'links'}, geht nach ${it.auf==='aussen'?'außen':'innen'} auf`;
+      if(it.t==='tuer') return `${n+1}  Tür, Wand ${wa}: ${r1(it.w)} cm breit, ${von} cm von links, Scharnier ${it.anschlag||'links'}, geht nach ${it.auf==='aussen'?'außen':'innen'} auf, ${it.blende==='nein'?'ohne Blende':it.blende==='ja'?'Blende '+r1(it.blendeB==null?6:it.blendeB)+' cm breit':'Blende nicht angegeben'}`;
       if(it.t==='fenster') return `${n+1}  Fenster, Wand ${wa}: ${r1(it.w)} cm breit, ${von} cm von links`+(it.bruestung==null?'':`, Unterkante ${r1(it.bruestung)} cm`)+(it.oberkante==null?'':`, Oberkante ${r1(it.oberkante)} cm`)+(it.bruestung==null&&it.oberkante==null?'':' ab Boden');
       if(it.t==='nische') return `${n+1}  Nische, Wand ${wa}${it.sitzt==='vorwand'?', in der Vorwand':''}: ${r1(it.w)} cm breit, ${r1(it.nh)} cm hoch, ${r1(it.d)} cm tief, ${von} cm von links, ${r1(it.hoehe)} cm ab Boden`;
       if(it.t==='schalter') return `${n+1}  Lichtschalter, Wand ${wa}: ${it.seite==='aussen'?'draußen im Flur':'im Badezimmer'}, ${von} cm von links${hoeheTxt(it)}`;

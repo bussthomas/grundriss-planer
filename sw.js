@@ -1,5 +1,5 @@
 // Macht die Seite installierbar und offline nutzbar. Bei jeder Änderung die Version hochzählen.
-const CACHE = 'grundriss-v19';
+const CACHE = 'grundriss-v20';
 const DATEIEN = ['./', 'index.html', 'rechtliches.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',
   'fonts/Poppins-Regular.ttf', 'fonts/Poppins-Medium.ttf', 'fonts/Poppins-SemiBold.ttf', 'fonts/Poppins-Bold.ttf'];
 
