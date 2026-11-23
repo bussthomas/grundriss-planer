@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Grundriss-Planer</title>
+<title>Dein Badezimmer heute</title>
 <meta name="robots" content="noindex">
-<meta name="description" content="Zeichne dein Badezimmer Schritt für Schritt und schick mir den Grundriss.">
+<meta name="description" content="Zeichne dein Badezimmer so, wie es heute ist, und schick es mir.">
 <meta name="theme-color" content="#FFFFFF">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -111,9 +111,11 @@ h2{font-size:17px;font-weight:600;margin:0 0 2px}
   #panel{order:-1;border-top:0;border-right:1px solid var(--line)}
 }
 @media (max-height:620px) and (max-width:899px){main{grid-template-rows:minmax(0,1fr) minmax(0,52%)}}
-#neu-frage{border:0;border-radius:var(--radius);padding:20px;width:calc(100% - 32px);max-width:360px;color:var(--ink)}
-#neu-frage::backdrop{background:rgba(26,26,26,.5)}
-#neu-frage h2{font-size:18px;font-weight:600;margin:0 0 6px}
+#neu-frage,#start-info{border:0;border-radius:var(--radius);padding:20px;width:calc(100% - 32px);max-width:360px;color:var(--ink)}
+#neu-frage::backdrop,#start-info::backdrop{background:rgba(26,26,26,.5)}
+#neu-frage h2,#start-info h2{font-size:18px;font-weight:600;margin:0 0 6px}
+#start-info{max-width:420px}#start-info h2{font-size:20px;line-height:1.25;margin-bottom:10px}#start-info p{margin:0 0 10px}
+#start-info .start-box{background:var(--accent,#FCE06E);color:#661717;border-radius:var(--radius);padding:10px 12px}
 #neu-frage p{margin:0 0 8px;color:var(--muted)}
 .wandbild{display:block;width:100%;min-height:0}
 .wand-kopf{display:flex;align-items:center;gap:6px;flex:none}
@@ -178,7 +180,7 @@ h2+.hinweis{margin-top:-4px}
 </head>
 <body>
 <header>
-  <h1>Grundriss-Planer</h1>
+  <h1>Dein Badezimmer heute</h1>
   <button id="b-zurueck" type="button" aria-label="Letzte Änderung rückgängig machen" title="Rückgängig">↶</button>
   <button id="b-neu" type="button">Neu</button>
 </header>
@@ -189,6 +191,14 @@ h2+.hinweis{margin-top:-4px}
     <button id="neu-nein" class="knopf zwei" type="button" autofocus>Abbrechen</button>
     <button id="neu-ja" class="knopf" type="button">Neu anfangen</button>
   </div>
+</dialog>
+<dialog id="start-info" aria-labelledby="start-titel">
+  <p class="ueber">Bevor du startest</p>
+  <h2 id="start-titel">Zeichne dein Badezimmer so, wie es heute ist</h2>
+  <p>Ich brauche zuerst den Stand von heute. Wo sind Tür und Fenster? Wo stehen WC, Waschbecken, Dusche? Wo kommen Wasser und Abwasser aus der Wand?</p>
+  <p class="start-box"><b>Bitte noch nichts umplanen.</b> Hier trägst du nicht ein, wie es später aussehen soll. Deine Wünsche frage ich danach ab, in der Wunschliste.</p>
+  <p>Etwas ist schon ausgebaut? Dann trag ein, wo es stand.</p>
+  <button id="start-ok" class="knopf" type="button" autofocus>Verstanden, los geht’s</button>
 </dialog>
 <dialog id="wand-gross" aria-label="Ansicht der Wand">
   <div id="wand-gross-inhalt"></div>
@@ -1319,7 +1329,7 @@ function fehlt(){
 }
 function inhaltSchicken(s){
   const k=PARAM.get('k'), n=fotoListe().filter(f=>FOTOS.has(f.key)).length, teilen=!!navigator.canShare, offen=fehlt().filter(f=>!f[1]&&(!KURZ||['Tür','WC','Waschbecken','Dusche oder Wanne'].includes(f[0])));
-  return `<p class="ueber">Letzter Schritt</p><h2>Schick deinen Grundriss an Thommy</h2>
+  return `<p class="ueber">Letzter Schritt</p><h2>Schick den Stand von heute an Thommy</h2>
   ${KURZ?'<p class="hinweis">Du bekommst innerhalb von 24 Stunden per WhatsApp eine Skizze, was aus deinem Badezimmer werden kann (Montag bis Freitag). Kostenlos.</p>':''}
   ${offen.length?`<p class="hinweis">Noch offen ist nicht schlimm${KURZ?'.':', das klären wir im Gespräch.'}</p><div class="chips">${offen.map(([t])=>`<span class="chip offen">${esc(t)}</span>`).join('')}</div>`:''}
   ${k?'':`<label class="feld">Dein Name<input id="f-name" autocomplete="given-name" value="${esc(S.vorname)}"></label>`}
@@ -1434,7 +1444,18 @@ wrap('neu-nein').addEventListener('click',()=>wrap('neu-frage').close());
 wrap('neu-ja').addEventListener('click',()=>{
   wrap('neu-frage').close();
   verlauf=[]; fotosLeeren(); S=leer(); sel=null; schritt=0; gesendet=false; speichere(); zeigeInhalt(); ansicht=null; maleplan();
+  startZeigen(true);
 });
+/* Hinweis vor dem Start: Stand von heute, nicht der Wunsch. Einmal je Gerät, nach „Neu“ wieder. Nicht bei geöffnetem Link und nicht beim Bild-Export. */
+const START_OK='bad-heute-start-ok';
+function startZeigen(immer){
+  if(PARAM.get('bild')==='1'||PARAM.get('skizze')==='1') return;
+  if(!immer&&(/[#&](z|p)=/.test(location.hash)||localStorage.getItem(START_OK))) return;
+  const d=wrap('start-info'); if(d.open) return;
+  try{ d.showModal(); }catch(e){}
+}
+wrap('start-info').addEventListener('cancel',e=>e.preventDefault());
+wrap('start-ok').addEventListener('click',()=>{ try{ localStorage.setItem(START_OK,'1'); }catch(e){} wrap('start-info').close(); });
 addEventListener('keydown',e=>{
   if(/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
   if((e.metaKey||e.ctrlKey)&&e.key==='z'){ e.preventDefault(); zurueck(); return; }
@@ -1487,7 +1508,7 @@ function beschreibung(){
 }
 function nachricht(){
   const name=(S.vorname||PARAM.get('v')||'').trim(), k=PARAM.get('k'), link=planLink(), n=fotoListe().length;
-  let t=KURZ?`Hallo Thommy, hier ist mein Grundriss für die kostenlose Skizze.`:`Hallo Thommy, hier ist mein Grundriss.`;
+  let t=KURZ?`Hallo Thommy, hier ist mein Badezimmer, so wie es heute ist. Für die kostenlose Skizze.`:`Hallo Thommy, hier ist mein Badezimmer, so wie es heute ist.`;
   if(name) t+=`\nName: ${name}`;
   if(k) t+=`\nKundencode: ${k}`;
   { const l=S.lead||{}; t+=`\nPLZ: ${l.plz||'?'}\nEigentümer: ${l.eigen==='ja'?'ja':l.eigen==='nein'?'nein, Miete':'?'}\nWann: ${(LEAD_WANN.find(([k])=>k===l.wann)||[,'?'])[1]}`;
@@ -1519,7 +1540,7 @@ async function bildErstellen(){
   const g=c.getContext('2d');
   g.fillStyle='#fff'; g.fillRect(0,0,B,H);
   g.fillStyle='#7C2323'; g.fillRect(0,0,B,kopfH);
-  g.fillStyle='#fff'; g.font='600 38px Poppins,sans-serif'; g.fillText('Mein Badezimmer: Grundriss',40,58);
+  g.fillStyle='#fff'; g.font='600 38px Poppins,sans-serif'; g.fillText('Mein Badezimmer heute',40,58);
   const name=(S.vorname||PARAM.get('v')||'').trim(), datum=new Date().toLocaleDateString('de-DE');
   g.font='400 24px Poppins,sans-serif'; g.fillText([name,datum,`${r1(S.L)} × ${r1(S.B)} cm, Höhe ${r1(S.H)} cm`].filter(Boolean).join('  ·  '),40,98);
   g.drawImage(img,40,kopfH+10);
@@ -1592,6 +1613,7 @@ normalisieren();
 speichere();
 zeigeInhalt();
 maleplan();
+startZeigen();
 fotosLaden();
 ladeKurz();
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(maleplan);

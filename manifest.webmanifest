@@ -1,7 +1,7 @@
 {
-  "name": "Grundriss-Planer",
-  "short_name": "Grundriss-Planer",
-  "description": "Zeichne dein Badezimmer und schick mir den Grundriss.",
+  "name": "Dein Badezimmer heute",
+  "short_name": "Bad heute",
+  "description": "Zeichne dein Badezimmer so, wie es heute ist, und schick es mir.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
